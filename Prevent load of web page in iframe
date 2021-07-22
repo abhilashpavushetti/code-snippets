@@ -1,0 +1,12 @@
+If(window.top != window.self){
+	Top.location.href = document.location.href;
+}
+or
+apex:page standardcontroller = "contact" extensions = "contact1" action = "{!esign_iFrame}">
+<apex:form id = "iFramePage">
+<center>
+  <apex:commandButton value = "Back" action = "{!back}"/>
+  <apex:pageMessages></apex:pageMessages>
+  <apex:iframe rendered = "iFramePage" frameborder = "true" width = "1000px" height = "800px" src = "{!esignUrl}"  scrolling = "true" />
+  <apex:commandButton value = "Back" action = "{!back}"/>
+</center>
