@@ -1,0 +1,40 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,force:lightningQuickAction,lightning:isUrlAddressable" access="global" >
+    <lightning:navigation aura:id="navService"/>
+    <aura:attribute name="pageReference" type="Object"/>
+    <div class="slds-page-header--object-home slds-page-header_joined slds-page-header_bleed slds-page-header slds-shrink-none test-headerRegion forceListViewManagerHeader">
+        <div class="slds-grid">
+            <div class="slds-col slds-has-flexi-truncate firstHeaderRow">
+                <div class="slds-media slds-no-space slds-grow">
+                    <div class="slds-media__body slds-align-middle">                                            
+                        <div class="slds-page-header__name">
+                            <div class="slds-page-header__name-title">
+                                <h1>
+                                    <span class="slds-page-header__title slds-truncate" title="TV Manager/Dashboard Reports">TV Manager/Dashboard Reports</span>
+                                </h1>
+                            </div>
+                        </div><br/>
+                    </div>
+                </div>
+            </div>                          
+        </div>
+    </div>
+    <lightning:card>
+        <div>
+            <!-- <div class="slds-section slds-is-open ">
+                <h3 class="slds-section__title slds-theme_shade">
+                    <span class="slds-truncate slds-p-left_small" title="Salesforce TV Manager/Dashboard">Salesforce TV Manager/Dashboard</span>
+                </h3>
+            </div> -->
+            <lightning:button variant="base" label="TV Manager/Dashboard Report" class="slds-p-left_small" title="TV Manager/Dashboard" onclick="{!c.manager}"/>
+            
+        </div><br/>
+    </lightning:card>
+</aura:component>
+---------------------------------------------JS------------------------------------------------------
+({
+    manager : function(component, event, helper) {
+        var recid=component.get("v.recordId");
+        window.open("/apex/Salesforce_Tv_Manager?","_blank");
+        $A.get("e.force:closeQuickAction").fire();
+    }, 
+})
