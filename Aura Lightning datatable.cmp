@@ -1,0 +1,998 @@
+<aura:component controller="DashBoardController_Lex" implements="force:appHostable,flexipage:availableForAllPageTypes,lightning:isUrlAddressable" access="global">
+    
+    <aura:attribute name="dashboardCtrlObj" type="DashBoardController_Lex"/>
+    <aura:attribute name="relatedteamnames" type="List"/>
+    <aura:attribute name="selectedTeam" type="String"/>
+    <aura:handler name="init" action="{!c.doInit}" value="{!this}"/>
+    <aura:attribute name="isOpen" type="boolean" default="false"/>
+    <aura:attribute name="myBoolean" type="boolean" default="false"/>
+    <aura:attribute name="columns" type="List"/>
+    <aura:attribute name="data" type="Object"/>
+    <aura:attribute name="allDataList1" type="List" default=""/> 
+    <aura:attribute name="allDataList2" type="List" default=""/> 
+    <aura:attribute name="allDataList3" type="List" default=""/> 
+    <aura:attribute name="allDataList4" type="List" default=""/> 
+    <aura:attribute name="allDataList5" type="List" default=""/> 
+    <aura:attribute name="allDataList6" type="List" default=""/> 
+    <aura:attribute name="today" type="Date"/>
+    <aura:attribute name="MBAmount" type="Double"/>
+    <aura:attribute name="UserTargets" type="Double"/>
+    <aura:attribute name="totalSales" type="Double"/>
+    <aura:attribute name="MBtotal" type="Double"/>
+    <aura:attribute name="MBtargettotal" type="Double"/>
+    <aura:attribute name="indiaBoolean" type="Boolean"/>
+    <aura:attribute name="overssesBoolean" type="Boolean"/>
+    <aura:attribute name="SalesforceTVUser" type="Boolean"/>
+    <aura:attribute name="hidetable" type="boolean" default="false" />   
+    <aura:attribute name="buttonvarient1" type="string" default="Neutral" />  
+    <aura:attribute name="buttonvarient2" type="string" default="Neutral" />  
+    <aura:attribute name="buttonvarient3" type="string" default="Neutral" />  
+    <aura:attribute name="buttonvarient4" type="string" default="Neutral" />  
+    <aura:attribute name="buttonvarient5" type="string" default="Neutral" />  
+    <aura:attribute name="buttonvarient6" type="string" default="Neutral" />  
+    
+    
+    <aura:if isTrue="{!v.isOpen}">
+        
+        <!--###### MODAL BOX Start######--> 
+        <!--  <lightning:button label="Open Modal" onclick="{!c.openModal}" />-->
+        <div role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open " aura:id="myModal">
+            <div class="slds-modal__container">
+                <!-- ###### MODAL BOX HEADER Start ######-->
+                <header class="slds-modal__header">
+                    <lightning:buttonIcon iconName="utility:close"
+                                          onclick="{! c.closeModel }"
+                                          alternativeText="close"
+                                          variant="bare-inverse"
+                                          class="slds-modal__close"/>
+                    
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Select Team</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">  
+                    <lightning:select aura:id="teamsList" name="selectteam" value="{!v.selectedTeam}" label="Select Team" required="true">
+                        <aura:iteration items="{!v.relatedteamnames}" var="eachteam">
+                            <option value = "1">None</option>
+                            <option value="{!eachteam}">{!eachteam}</option>
+                        </aura:iteration>
+                    </lightning:select>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning:button variant="brand" 
+                                      label="Confirm"
+                                      title="Confirm"
+                                      onclick="{!c.confirmSelectTeam}"/>
+                    <lightning:button variant="neutral" 
+                                      label="Cancel"
+                                      title="Cancel"
+                                      onclick="{! c.closeModel }"/>                       
+                </footer>
+            </div>
+            
+            
+        </div> 
+        <div class="slds-backdrop slds-backdrop_open " aura:id="myModal-Back"></div>
+        
+    </aura:if>
+    <article>
+        <article>
+            <aura:if isTrue = "{!v.hidetable}">
+                <div class="{! v.myBoolean ? 'slds-show' : 'slds-hide'}">
+                    <div class="slds-grid slds-grid_vertical ">
+                        
+                        <div class="slds-card slds-theme_grey">
+                            <div class="myColor">
+                                <div class="slds-page-header">
+                                    <div class="slds-page-header__row">
+                                        <div class="slds-page-header__col-title">
+                                            <div class="slds-media">
+                                                <div class="slds-media__figure">
+                                                    <span class="slds-icon_container slds-icon-standard-opportunity">
+                                                        <lightning:icon iconName="standard:opportunity" alternativeText="Dashboard" title="Dashboard" />   
+                                                    </span>
+                                                </div>
+                                                <div class="slds-media__body">
+                                                    <div class="slds-page-header__name">
+                                                        <div class="slds-page-header__name-title">
+                                                            <h1>
+                                                                <span>Manager Dashboard</span>
+                                                                <span class="slds-page-header__title slds-truncate" title="{!v.selectedTeam}">{!v.selectedTeam}</span>
+                                                            </h1>
+                                                        </div>
+                                                        <div class="slds-page-header__name-switcher">  
+                                                        </div>
+                                                    </div> 
+                                                </div>
+                                                <div class="slds-align_absolute-left">
+                                                    <lightning:button variant="brand" label="Change Team" title="Change Team" onclick="{! c.handleChangeTeam }" />
+                                                </div>
+                                            </div>
+                                        </div> 
+                                    </div>      
+                                    <div class="slds-page-header__row">
+                                        <div class="slds-page-header__col-meta">
+                                            <p class="slds-page-header__meta-text">Last Refreshed Date : <lightning:formattedDateTime aura:id="dt"
+                                                                                                                                      value="{!v.today}"
+                                                                                                                                      month="short"
+                                                                                                                                      day="numeric"
+                                                                                                                                      year="numeric"
+                                                                                                                                      hour="2-digit"
+                                                                                                                                      minute="2-digit"
+                                                                                                                                      second="2-digit"
+                                                                                                                                      hour12="true"
+                                                                                                                                      timeZone="{!$Locale.timezone}"/></p>
+                                        </div>                  
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="slds-col">
+                            <article>
+                                <aura:if isTrue="{!v.allDataList1}">                
+                                    <table class="slds-table datatable slds-table_cell-buffer slds-no-row-hover slds-table_bordered slds-table_col-bordered">      
+                                        <thead>
+                                            <tr class="slds-line-height_reset">
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Sales Consultants">Sales Consultants</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="MB (INR)">MB (INR)</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Target (INR)">Target (INR)</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Sale Made This Month (INR)">Sale Made This Month (INR)</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Deficit MB">Deficit MB</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Deficit Target">Deficit Target</div>
+                                                </th>                
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <aura:iteration items="{!v.allDataList1}" var="eachitem">
+                                                <tr class="slds-hint-parent">                
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.name}</div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">
+                                                            <lightning:formattedNumber value="{!eachitem.ValforMBAmount}" style="decimal" minimumSignificantDigits="7" ></lightning:formattedNumber>
+                                                        </div>
+                                                    </td>
+                                                    <td>  
+                                                        <div class="slds-truncate slds-align_absolute-center">
+                                                            <lightning:formattedNumber value="{!eachitem.ValforUserTargets}" style="decimal" minimumSignificantDigits="7" ></lightning:formattedNumber>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.fortotalSales}</div>
+                                                    </td>
+                                                    <td>
+                                                        <aura:if isTrue = "{!greaterthan(eachitem.ValforMBAmount, eachitem.fortotalSales)}" >
+                                                            <div class="slds-truncate slds-align_absolute-center slds-text-color_error">
+                                                                <lightning:formattedNumber value="{!eachitem.fortotalSales-eachitem.ValforMBAmount}" style="decimal" minimumSignificantDigits="7" ></lightning:formattedNumber>
+                                                            </div>
+                                                            <aura:set attribute = "else">
+                                                                <div class="slds-truncate slds-align_absolute-center slds-text-color_success">
+                                                                    <lightning:formattedNumber value="{!eachitem.fortotalSales-eachitem.ValforMBAmount}" style="decimal" minimumSignificantDigits="2" ></lightning:formattedNumber>
+                                                                </div>   
+                                                            </aura:set>
+                                                        </aura:if>
+                                                    </td>
+                                                    <td> 
+                                                        <div class="slds-truncate slds-align_absolute-center slds-text-color_error">
+                                                            <lightning:formattedNumber value="{!eachitem.fortotalSales-eachitem.ValforUserTargets}" style="decimal" minimumSignificantDigits="7" ></lightning:formattedNumber>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </aura:iteration>
+                                            <tr class="slds-hint-parent">                
+                                                <td>
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Grand Total"><b>Grand Total</b></div>
+                                                </td>
+                                                <td> 
+                                                    <div class="slds-truncate slds-align_absolute-center">
+                                                        <b> <lightning:formattedNumber value="{!v.MBAmount}" style="decimal" minimumSignificantDigits="8" ></lightning:formattedNumber></b>
+                                                    </div>
+                                                </td>
+                                                <td> 
+                                                    <div class="slds-truncate slds-align_absolute-center">
+                                                        <b> <lightning:formattedNumber value="{!v.UserTargets}" style="decimal" minimumSignificantDigits="8" ></lightning:formattedNumber></b>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="slds-truncate slds-align_absolute-center" title=""><b>{!v.totalSales}</b></div>
+                                                </td>
+                                                <td>  
+                                                    <div class="slds-truncate slds-align_absolute-center slds-text-color_error">
+                                                        <b> <lightning:formattedNumber value="{!v.MBtotal}" style="decimal" minimumSignificantDigits="8" ></lightning:formattedNumber></b>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="slds-truncate slds-align_absolute-center slds-text-color_error">
+                                                        <b> <lightning:formattedNumber value="{!v.MBtargettotal}" style="decimal" minimumSignificantDigits="8" ></lightning:formattedNumber></b>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </aura:if>                       
+                                <aura:if isTrue="{!v.allDataList2}">
+                                    <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered">
+                                        <thead>
+                                            <tr class="slds-line-height_reset">
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Sales Consultants">Sales Consultants</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="OverDue Tasks (last 30 days)">OverDue Tasks (last 30 days)</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Today(Tasks)">Today(Tasks)</div>
+                                                </th>                                   
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <aura:iteration items="{!v.allDataList2}" var="eachitem">
+                                                <tr class="slds-hint-parent">                
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.name}</div>
+                                                    </td>
+                                                    <td>
+                                                        <aura:if isTrue = "{!greaterthan(eachitem.ValforOverDueTasks, 25)}" >
+                                                            <div class="slds-truncate slds-align_absolute-center slds-text-color_error">{!eachitem.ValforOverDueTasks}
+                                                                
+                                                            </div>
+                                                            <aura:set attribute = "else">
+                                                                <div class="slds-truncate slds-align_absolute-center slds-text-color_success">{!eachitem.ValforOverDueTasks}
+                                                                    
+                                                                </div>   
+                                                            </aura:set>
+                                                        </aura:if>
+                                                    </td>
+                                                    <td> 
+                                                        <aura:if isTrue = "{!greaterthan(eachitem.ValforOverDueTasks1, 25)}" >
+                                                            <div class="slds-truncate slds-align_absolute-center slds-text-color_error">{!eachitem.ValforOverDueTasks1}
+                                                                
+                                                            </div>
+                                                            <aura:set attribute = "else">
+                                                                <div class="slds-truncate slds-align_absolute-center slds-text-color_success">{!eachitem.ValforOverDueTasks1}
+                                                                    
+                                                                </div>   
+                                                            </aura:set>
+                                                        </aura:if>
+                                                    </td>                            
+                                                </tr>
+                                            </aura:iteration>                    
+                                        </tbody>
+                                    </table>
+                                </aura:if>
+                                <aura:if isTrue="{!v.allDataList3}">
+                                    <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered">
+                                        <thead>
+                                            <tr class="slds-line-height_reset">
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Sales Consultants">Sales Consultants</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Coaching sales (Target 5)">Coaching sales (Target 5)</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Visa Sales (Target 2)">Visa Sales (Target 2)</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Y-Path Sales (Target 2)">Y-Path Sales (Target 2)</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Jobsite (Target 5)">Jobsite (Target 5)</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Evaluations (Target 20)">Evaluations (Target 20)</div>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <aura:iteration items="{!v.allDataList3}" var="eachitem">
+                                                <tr class="slds-hint-parent">                
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.name}</div>
+                                                    </td>
+                                                    <td>
+                                                        <aura:if isTrue = "{!lessthan(eachitem.coachingsales, 2)}" >
+                                                            <div class="slds-truncate slds-align_absolute-center slds-text-color_error">{!eachitem.coachingsales}
+                                                                
+                                                            </div>
+                                                            <aura:set attribute = "else">
+                                                                <div class="slds-truncate slds-align_absolute-center slds-text-color_success">{!eachitem.coachingsales}
+                                                                    
+                                                                </div>   
+                                                            </aura:set>
+                                                        </aura:if>
+                                                    </td>
+                                                    <td>
+                                                        <aura:if isTrue = "{!lessthan(eachitem.visasales, 1)}" >
+                                                            <div class="slds-truncate slds-align_absolute-center slds-text-color_error">{!eachitem.visasales}
+                                                                
+                                                            </div>
+                                                            <aura:set attribute = "else">
+                                                                <div class="slds-truncate slds-align_absolute-center slds-text-color_success">{!eachitem.visasales}
+                                                                    
+                                                                </div>   
+                                                            </aura:set>
+                                                        </aura:if> 
+                                                    </td> 
+                                                    <td>
+                                                        
+                                                        <aura:if isTrue = "{!lessthan(eachitem.ypathsales, 1)}" >
+                                                            <div class="slds-truncate slds-align_absolute-center slds-text-color_error">{!eachitem.ypathsales}
+                                                                
+                                                            </div>
+                                                            <aura:set attribute = "else">
+                                                                <div class="slds-truncate slds-align_absolute-center slds-text-color_success">{!eachitem.ypathsales}
+                                                                    
+                                                                </div>   
+                                                            </aura:set>
+                                                        </aura:if> 
+                                                    </td> 
+                                                    <td>
+                                                        <!--      <div class="slds-text-color_error slds-align_absolute-center">{!eachitem.jobsite}</div>-->
+                                                        <aura:if isTrue = "{!lessthan(eachitem.jobsite, 1)}" >
+                                                            <div class="slds-truncate slds-align_absolute-center slds-text-color_error">{!eachitem.jobsite}
+                                                                
+                                                            </div>
+                                                            <aura:set attribute = "else">
+                                                                <div class="slds-truncate slds-align_absolute-center slds-text-color_success">{!eachitem.jobsite}
+                                                                    
+                                                                </div>   
+                                                            </aura:set>
+                                                        </aura:if> 
+                                                    </td> 
+                                                    <td>
+                                                        <!--    <div class="slds-text-color_error slds-align_absolute-center">{!eachitem.evaluations}</div>-->
+                                                        <aura:if isTrue = "{!lessthan(eachitem.evaluations, 1)}" >
+                                                            <div class="slds-truncate slds-align_absolute-center slds-text-color_error">{!eachitem.evaluations}
+                                                                
+                                                            </div>
+                                                            <aura:set attribute = "else">
+                                                                <div class="slds-truncate slds-align_absolute-center slds-text-color_success">{!eachitem.evaluations}
+                                                                    
+                                                                </div>   
+                                                            </aura:set>
+                                                        </aura:if> 
+                                                    </td> 
+                                                </tr>
+                                            </aura:iteration>                    
+                                        </tbody>
+                                    </table>
+                                </aura:if>
+                                <aura:if isTrue="{!v.allDataList4}">
+                                    <aura:if isTrue="{!v.indiaBoolean}">
+                                        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered">
+                                            <thead>
+                                                <tr class="slds-line-height_reset">
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate slds-align_absolute-center" title="Sales Consultants">Sales Consultants</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate slds-align_absolute-center" title="Sales Ranking (This Month)">Sales Ranking (This Month)</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate slds-align_absolute-center" title="Sales Ranking (This Year)">Sales Ranking (This Year)</div>
+                                                    </th>                            
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <aura:iteration items="{!v.allDataList4}" var="eachitem">
+                                                    <tr class="slds-hint-parent">                
+                                                        <td>
+                                                            <div class="slds-truncate slds-align_absolute-center">{!eachitem.name}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="slds-truncate slds-align_absolute-center">{!eachitem.salesrankingthismonth}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="slds-truncate slds-align_absolute-center">{!eachitem.salesrankingthisyear}</div>
+                                                        </td>                                  
+                                                    </tr>
+                                                </aura:iteration>                    
+                                            </tbody>
+                                        </table>
+                                    </aura:if>                
+                                    <aura:if isTrue="{!v.overssesBoolean}">
+                                        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered">
+                                            <thead>
+                                                <tr class="slds-line-height_reset">
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate slds-align_absolute-center" title="Sales Consultants">Sales Consultants</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate slds-align_absolute-center" title="Sales Ranking (This Month)">Sales Ranking (This Month)</div>
+                                                    </th>
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate slds-align_absolute-center" title="Sales Ranking (This Year)">Sales Ranking (This Year)</div>
+                                                    </th>                            
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <aura:iteration items="{!v.allDataList4}" var="eachitem">
+                                                    <tr class="slds-hint-parent">                
+                                                        <td>
+                                                            <div class="slds-truncate slds-align_absolute-center">{!eachitem.name}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="slds-truncate slds-align_absolute-center">{!eachitem.salesrankingthismonth}</div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="slds-truncate slds-align_absolute-center">{!eachitem.salesrankingthisyear}</div>
+                                                        </td>                                  
+                                                    </tr>
+                                                </aura:iteration>                    
+                                            </tbody>
+                                        </table>
+                                    </aura:if>                
+                                </aura:if>
+                                <aura:if isTrue="{!v.allDataList5}">                
+                                    <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered">
+                                        <thead>
+                                            <tr class="slds-line-height_reset">
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Sales Consultants">Sales Consultants</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Open">Open</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="DNR">DNR</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Contacted but not counselled">Contacted but not counselled</div>
+                                                </th>                            
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Counselled">Counselled</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Bad data">Bad data</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="E1">E1</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="E2">E2</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="E3">E3</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="E4">E4</div>
+                                                </th>                            
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <aura:iteration items="{!v.allDataList5}" var="eachitem">
+                                                <tr class="slds-hint-parent">                
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.name}</div>
+                                                    </td>
+                                                    <td>
+                                                        <aura:if isTrue = "{!greaterthanorequal(eachitem.open, 0)}" >
+                                                            <div class="slds-truncate slds-align_absolute-center slds-text-color_success">{!eachitem.open}
+                                                                
+                                                            </div>
+                                                            <aura:set attribute = "else">
+                                                                <div class="slds-truncate slds-align_absolute-center slds-text-color_error">{!eachitem.open}
+                                                                    
+                                                                </div>   
+                                                            </aura:set>
+                                                        </aura:if>      
+                                                    </td>
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.dnr}</div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.contacted}</div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.counselled}</div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.baddata}</div>
+                                                    </td>
+                                                    <td>
+                                                        <!--       <div class="slds-truncate slds-align_absolute-center">{!eachitem.e1}</div>-->
+                                                        <aura:if isTrue = "{!greaterthan(eachitem.e1, 25)}" >
+                                                            <div class="slds-truncate slds-align_absolute-center slds-text-color_error">{!eachitem.e1}
+                                                                
+                                                            </div>
+                                                            <aura:set attribute = "else">
+                                                                <div class="slds-truncate slds-align_absolute-center slds-text-color_success">{!eachitem.e1}
+                                                                    
+                                                                </div>   
+                                                            </aura:set>
+                                                        </aura:if>
+                                                    </td>
+                                                    <td>
+                                                        <!--     <div class="slds-truncate slds-align_absolute-center">{!eachitem.e2}</div>-->
+                                                        <aura:if isTrue = "{!greaterthan(eachitem.e2, 25)}" >
+                                                            <div class="slds-truncate slds-align_absolute-center slds-text-color_error">{!eachitem.e2}
+                                                                
+                                                            </div>
+                                                            <aura:set attribute = "else">
+                                                                <div class="slds-truncate slds-align_absolute-center slds-text-color_success">{!eachitem.e2}
+                                                                    
+                                                                </div>   
+                                                            </aura:set>
+                                                        </aura:if>
+                                                    </td>
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.e3}</div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.e4}</div>
+                                                    </td>
+                                                </tr>
+                                            </aura:iteration>                    
+                                        </tbody>
+                                    </table>
+                                </aura:if>
+                                <aura:if isTrue="{!v.allDataList6}">
+                                    <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered">
+                                        <thead>
+                                            <tr class="slds-line-height_reset">
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Sales Consultants">Sales Consultants</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Active Calls">Active Calls</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Emails Sent">Emails Sent</div>
+                                                </th>
+                                                <aura:if isTrue="{!v.SalesforceTVUserVar}">
+                                                    <th class="" scope="col">
+                                                        <div class="slds-truncate slds-align_absolute-center" title="Today + OverDue Tasks">Today + OverDue Tasks</div>
+                                                    </th>
+                                                </aura:if>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Expected Sale Today (INR)">Expected Sale Today (INR)</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Sale Made Today (INR)">Sale Made Today (INR)</div>
+                                                </th>
+                                                <th class="" scope="col">
+                                                    <div class="slds-truncate slds-align_absolute-center" title="Total Sale This Month (INR)">Total Sale This Month (INR)</div>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <aura:iteration items="{!v.allDataList6}" var="eachitem">
+                                                <tr class="slds-hint-parent">                
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.name}</div>
+                                                    </td>
+                                                    <td>
+                                                        <aura:if isTrue = "{!lessthan(eachitem.ValforCallLogs, 40)}" >
+                                                            <div class="slds-truncate slds-align_absolute-center slds-text-color_error">{!eachitem.ValforCallLogs}
+                                                                
+                                                            </div>
+                                                            <aura:set attribute = "else">
+                                                                <div class="slds-truncate slds-align_absolute-center slds-text-color_success">{!eachitem.ValforCallLogs}
+                                                                    
+                                                                </div>   
+                                                            </aura:set>
+                                                        </aura:if>
+                                                    </td>
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.ValforEmailLogs}</div>
+                                                    </td> 
+                                                    <aura:if isTrue="{!v.SalesforceTVUser}">
+                                                        <td>
+                                                            <div class="slds-truncate slds-align_absolute-center">{!eachitem.ValforOverDueTasks}</div>
+                                                        </td> 
+                                                    </aura:if>
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.ValforExpectedSales}</div>
+                                                    </td> 
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.ValforTodaySales}</div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="slds-truncate slds-align_absolute-center">{!eachitem.fortotalSales}</div>
+                                                    </td>
+                                                </tr>
+                                            </aura:iteration>  
+                                            <tr class="slds-hint-parent ">                
+                                                <td>
+                                                    <div class="slds-truncate slds-align_absolute-center"><b>Grand Total</b></div>
+                                                    
+                                                </td>
+                                                <td>
+                                                </td>
+                                                <td>
+                                                </td>
+                                                <aura:if isTrue="{!v.SalesforceTVUser}">
+                                                    <td>
+                                                    </td>
+                                                </aura:if>
+                                                <td>
+                                                </td>
+                                                <td>
+                                                </td>
+                                                <td>
+                                                    <div class="slds-truncate slds-align_absolute-center" title=""><b>{!v.totalSales}</b></div>
+                                                    
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </aura:if>
+                            </article>
+                        </div> 
+                        <div>
+                            <lightning:card>
+                                <div class="slds-align_absolute-center" style="height:5rem">
+                                    <div class="slds-page-header__col-actions">
+                                        <div class="slds-page-header__controls">
+                                            <div class="slds-page-header__control">
+                                                <ul class="slds-button-group-list">
+                                                    <li>
+                                                        <lightning:button class="slds-button slds-button_neutral" label="1" title="Brand action" variant="{!v.buttonvarient1}" onclick="{! c.handleClickOne }" />
+                                                    </li>
+                                                    <li>
+                                                        <lightning:button class="slds-button slds-button_neutral" label="2" title="Brand action"  variant="{!v.buttonvarient2}"  onclick="{! c.handleClickTwo }" /> 
+                                                    </li>
+                                                    <li>
+                                                        <lightning:button class="slds-button slds-button_neutral" label="3" title="Brand action" variant="{!v.buttonvarient3}"  onclick="{! c.handleClickThree }" />
+                                                    </li>
+                                                    <li>
+                                                        <lightning:button class="slds-button slds-button_neutral" label="4" title="Brand action" variant="{!v.buttonvarient4}"  onclick="{! c.handleClickFour }" />
+                                                    </li>
+                                                    <li>
+                                                        <lightning:button class="slds-button slds-button_neutral" label="5" title="Brand action" variant="{!v.buttonvarient5}"  onclick="{! c.handleClickFive }" />
+                                                    </li>
+                                                    <li>
+                                                        <lightning:button class="slds-button slds-button_neutral" label="6" title="Brand action" variant="{!v.buttonvarient6}"  onclick="{! c.handleClickSix }"  />
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>     
+                                </div>     
+                            </lightning:card>      
+                        </div>        
+                    </div>
+                </div>
+            </aura:if>
+            -----------------------------------------------JS---------------------------------------------------------
+            ({
+    openModal : function(component, event, helper) {
+        //find modal using aura id
+        var modal = component.find("myModal");
+        var modalBackdrop = component.find("myModal-Back");
+        
+        // Now add and remove class
+        $A.util.addClass(modal, 'slds-fade-in-open');
+        $A.util.addClass(modalBackdrop, 'slds-fade-in-open');
+    },
+    closeModel: function(component, event, helper) {
+        //find modal using aura id
+        var modal = component.find("myModal");
+        var modalBackdrop = component.find("myModal-Back");
+        component.set("v.isOpen", false);
+        
+        
+        // Now add and remove class
+        $A.util.removeClass(modal, 'slds-fade-in-open');
+        $A.util.removeClass(modalBackdrop, 'slds-fade-in-open');
+    },
+    handleChangeTeam: function(component, event, helper){
+        component.set("v.isOpen", true);
+    },    
+    confirmSelectTeam : function(component, event, helper){
+        helper.confirmSelectTeam(component,event,helper)
+    },
+    doInit : function(component, event, helper) {
+        
+     //   helper.pollApex(component, event, helper);
+        var action = component.get('c.loadRelatedTeamNames');         
+        action.setCallback(this, function(a){
+            var state = a.getState(); // get the response state
+            //alert(state);
+            if(state == 'SUCCESS') {
+                //alert(a.getReturnValue());
+                component.set("v.isOpen", true);
+                component.set('v.relatedteamnames', a.getReturnValue());                   
+                //component.set('v.today', $A.localizationService.formatDate(new Date(),"YYYY-MM-DD"));                   
+                component.set('v.today', new Date()); 
+            }
+        });
+        $A.enqueueAction(action);                
+    },
+    handleClickSix : function(component, event, helper){
+        helper.handleClickSix(component, event, helper)
+    },
+    handleClickFive : function(component, event, helper){
+        helper.handleClickFive(component, event, helper)
+    },
+    handleClickFour : function(component, event, helper){
+        helper.handleClickFour(component, event, helper) 
+    },
+    handleClickThree : function(component, event, helper){
+        helper.handleClickThree(component, event, helper)
+    },
+    handleClickTwo : function(component, event, helper){
+        helper.handleClickTwo(component, event, helper)       
+    },
+   handleClickOne : function(component, event, helper){
+        helper.handleClickOne(component, event, helper)
+    }, 
+   
+})
+------------------------------HELPER------------------------------
+({
+                           
+    handleClickOneHelper : function(component, event){
+        var dashboardObject = component.get('v.dashboardCtrlObj');
+        var custs1 = [];                
+        var conts1 = dashboardObject.allUSERSVales;
+        var conts2 = dashboardObject.mapValforMBAmount;
+        var conts3 = dashboardObject.mapValforUserTargets;
+        var conts4 = dashboardObject.mapfortotalSales;
+        var MBAmount = 0;
+        var UserTargets = 0;
+        var totalSales = 0;
+        var MBtotal = 0;
+        var MBtargettotal = 0;
+        for ( var key in conts1 ) {
+            MBAmount +=conts2[key];
+            UserTargets+=conts3[key];
+            totalSales+=conts4[key];
+            MBtotal+=conts4[key] - conts2[key];
+            MBtargettotal+=conts4[key] - conts3[key];
+            custs1.push({name:conts1[key], ValforMBAmount:conts2[key],ValforUserTargets:conts3[key],fortotalSales:conts4[key]});
+        } 
+        
+        component.set('v.allDataList1', custs1);
+        component.set('v.MBAmount', MBAmount);
+        component.set('v.UserTargets', UserTargets);
+        component.set('v.totalSales', totalSales);
+        component.set('v.MBtotal', MBtotal);
+        component.set('v.MBtargettotal', MBtargettotal);  
+        component.set('v.allDataList2', null);
+        component.set('v.allDataList3', null);
+        component.set('v.allDataList4', null);
+        component.set('v.allDataList5', null);
+        component.set('v.allDataList6', null);
+    },
+   handleClickSix : function(component, event, helper){
+        var dashboardObject = component.get('v.dashboardCtrlObj');
+        var custs1 = [];                
+        var conts1 = dashboardObject.allUSERSVales;
+        var conts2 = dashboardObject.mapValforCallLogs;
+        var conts3 = dashboardObject.mapValforEmailLogs;
+        var conts4 = dashboardObject.mapValforOverDueTasks;
+        var conts5 = dashboardObject.mapValforExpectedSales;
+        var conts6 = dashboardObject.mapValforTodaySales;
+        var conts7 = dashboardObject.mapfortotalSales;
+        var SalesforceTVUserVar = dashboardObject.SalesforceTVUser;
+        var totalSalesVar = 0;
+        for ( var key in conts1 ) {           
+            custs1.push({name: conts1[key],ValforCallLogs:conts2[key],ValforEmailLogs:conts3[key],ValforOverDueTasks:conts4[key],ValforExpectedSales:conts5[key],ValforTodaySales:conts6[key],fortotalSales:conts7[key]});
+            totalSalesVar+=conts7[key];
+        }         
+        component.set('v.allDataList6', custs1);  
+        component.set('v.totalSales', totalSalesVar);  
+        component.set('v.SalesforceTVUser', SalesforceTVUserVar);  
+        component.set('v.allDataList1', null);
+        component.set('v.allDataList2', null);        
+        component.set('v.allDataList3', null);        
+        component.set('v.allDataList4', null);        
+        component.set('v.allDataList5', null);        
+    },
+    handleClickFive : function(component, event, helper){
+        var dashboardObject = component.get('v.dashboardCtrlObj');
+        var custs1 = [];                
+        var conts1 = dashboardObject.allUSERSVales;
+        var conts2 = dashboardObject.mapValforScreen5;
+        var conts3 = dashboardObject.mapValforScreen5_2;
+        for ( var key in conts1 ) {           
+            custs1.push({name: conts1[key],open:conts2[key]['Open'],dnr:conts2[key]['DNP - Did not pick up'],contacted:conts2[key]['Contacted'],counselled:conts2[key]['Counseled'],baddata:conts2[key]['Bad Data'],e1:conts3[key]['S1-Eligible Now'],e2:conts3[key]['S2-Maybe Eligible'],e3:conts3[key]['S3-Eligible Later'],e4:conts3[key]['S4-Never Eligible']});
+        }         
+        component.set('v.allDataList5', custs1);  
+        component.set('v.allDataList1', null);
+        component.set('v.allDataList2', null);               
+        component.set('v.allDataList3', null);               
+        component.set('v.allDataList4', null);
+        component.set('v.allDataList6', null);
+    },
+    handleClickFour : function(component, event, helper){
+        var dashboardObject = component.get('v.dashboardCtrlObj');
+        var custs1 = [];                
+        var conts1 = dashboardObject.IndiaDestiantionMAP;
+        var conts2 = dashboardObject.YearlyINDDestiantionMAP;
+        var indiaBooleanVar = dashboardObject.indiaBoolean;
+        var overssesBooleanVar = dashboardObject.overssesBoolean;
+        for ( var key in conts1 ) {           
+            custs1.push({name: conts1[key],salesrankingthismonth:key,salesrankingthisyear:conts2[conts1[ranks]]});
+        }         
+        component.set('v.indiaBoolean', indiaBooleanVar); 
+        component.set('v.overssesBoolean', overssesBooleanVar); 
+        component.set('v.allDataList4', custs1);  
+        component.set('v.allDataList1', null);
+        component.set('v.allDataList2', null);        
+        component.set('v.allDataList3', null);
+		component.set('v.allDataList5', null);
+		component.set('v.allDataList6', null);        
+    },
+    handleClickThree : function(component, event, helper){
+        var dashboardObject = component.get('v.dashboardCtrlObj');
+        var custs1 = [];                
+        var conts1 = dashboardObject.allUSERSVales;
+        var conts2 = dashboardObject.mapValforScreen3;
+        for ( var key in conts1 ) {           
+            custs1.push({name: conts1[key],coachingsales:conts2[key]['Coaching'],visasales:conts2[key]['VISA'],ypathsales:conts2[key]['Y-Path'],jobsite:conts2[key]['Jobsite'],evaluations:conts2[key]['Evaluation']});
+        }         
+        component.set('v.allDataList3', custs1);  
+        component.set('v.allDataList1', null);
+        component.set('v.allDataList2', null);
+		component.set('v.allDataList6', null);
+		component.set('v.allDataList4', null); 
+        component.set('v.allDataList5', null);
+    },
+    handleClickTwo : function(component, event, helper){
+        var dashboardObject = component.get('v.dashboardCtrlObj');
+        var custs1 = [];                
+        var conts1 = dashboardObject.allUSERSVales;
+        console.log('conts1'+ JSON.stringify(conts1));
+        var conts2 = dashboardObject.mapValforOverDueTasks;
+        var conts3 = dashboardObject.mapValforOverDueTasks1;        
+        for ( var key in conts1 ) {           
+            custs1.push({name: conts1[key],ValforOverDueTasks:conts2[key], ValforOverDueTasks1:conts3[key]});
+        }         
+        component.set('v.allDataList2', custs1);  
+        component.set('v.allDataList1', null);        
+        component.set('v.allDataList3', null);        
+        component.set('v.allDataList4', null);        
+        component.set('v.allDataList5', null);        
+        component.set('v.allDataList6', null);        
+    },
+   handleClickOne : function(component, event, helper){
+        var dashboardObject = component.get('v.dashboardCtrlObj');
+        var custs1 = [];                
+        var conts1 = dashboardObject.allUSERSVales;
+        var conts2 = dashboardObject.mapValforMBAmount;
+        var conts3 = dashboardObject.mapValforUserTargets;
+        var conts4 = dashboardObject.mapfortotalSales;
+        var MBAmount = 0;
+        var UserTargets = 0;
+        var totalSales = 0;
+        var MBtotal = 0;
+        var MBtargettotal = 0;
+        for ( var key in conts1 ) {
+            MBAmount +=conts2[key];
+            UserTargets+=conts3[key];
+            totalSales+=conts4[key];
+            MBtotal+=conts4[key] - conts2[key];
+            MBtargettotal+=conts4[key] - conts3[key];
+            custs1.push({name:conts1[key], ValforMBAmount:conts2[key],ValforUserTargets:conts3[key],fortotalSales:conts4[key]});
+        } 
+        
+        component.set('v.allDataList1', custs1);
+        component.set('v.MBAmount', MBAmount);
+        component.set('v.UserTargets', UserTargets);
+        component.set('v.totalSales', totalSales);
+        component.set('v.MBtotal', MBtotal);
+        component.set('v.MBtargettotal', MBtargettotal);  
+        component.set('v.allDataList2', null);
+        component.set('v.allDataList3', null);
+        component.set('v.allDataList4', null);
+        component.set('v.allDataList5', null);
+        component.set('v.allDataList6', null);
+    }, 
+    
+ confirmSelectTeam : function(component, event, helper){
+
+        var selectedTeamVar = component.find('teamsList').get('v.value');
+        if(selectedTeamVar == '1'){
+            component.set("v.hidetable", false);
+        } else {        
+            var selectedTeamVar = component.get("v.selectedTeam");
+            var action = component.get('c.loadDashBoardData');
+            component.set("v.myBoolean", true);
+            component.set("v.hidetable", true);
+            
+            action.setParams({
+                "teamName" : selectedTeamVar 
+            });
+            
+            action.setCallback(this, function(a){
+                var state = a.getState(); // get the response state
+                if(state == 'SUCCESS') {
+                    component.set('v.dashboardCtrlObj', a.getReturnValue());
+                    component.set("v.isOpen", false); 
+                    component.set('v.allDataList1', null);
+                    component.set('v.allDataList2', null);
+                    component.set('v.allDataList3', null);
+                    component.set('v.allDataList4', null);
+                    component.set('v.allDataList5', null);
+                    component.set('v.allDataList6', null);
+                    component.set('v.buttonvarient1','Brand')
+                    helper.handleClickOneHelper(component, event);
+                    helper.AutoPageChange(component,helper,event);
+                }
+            });
+            $A.enqueueAction(action);
+
+        }
+    },
+    
+    AutoPageChange : function(component,helper,event){
+          var i=1;
+                    window.setInterval($A.getCallback(function() {
+                        i++;
+                        if(i==1) {
+                            helper.handleClickOne(component,event,helper)
+                            component.set('v.buttonvarient1','Brand')
+                            component.set('v.buttonvarient2','Neutral')
+                            component.set('v.buttonvarient3','Neutral')
+                            component.set('v.buttonvarient4','Neutral')
+                            component.set('v.buttonvarient5','Neutral')
+                            component.set('v.buttonvarient6','Neutral')
+                            
+                        }
+                        if(i==2) {
+                            helper.handleClickTwo(component,event,helper)
+                             component.set('v.buttonvarient1','Neutral')
+                            component.set('v.buttonvarient2','Brand')
+                            component.set('v.buttonvarient3','Neutral')
+                            component.set('v.buttonvarient4','Neutral')
+                            component.set('v.buttonvarient5','Neutral')
+                            component.set('v.buttonvarient6','Neutral')
+                        }
+                        if(i==3) {
+                            helper.handleClickThree(component,event,helper)
+                             component.set('v.buttonvarient1','Neutral')
+                            component.set('v.buttonvarient2','Neutral')
+                            component.set('v.buttonvarient3','Brand')
+                            component.set('v.buttonvarient4','Neutral')
+                            component.set('v.buttonvarient5','Neutral')
+                            component.set('v.buttonvarient6','Neutral')
+                        }
+                        if(i==4) {
+                            helper.handleClickFour(component,event,helper)
+                             component.set('v.buttonvarient1','Neutral')
+                            component.set('v.buttonvarient2','Neutral')
+                            component.set('v.buttonvarient3','Neutral')
+                            component.set('v.buttonvarient4','Brand')
+                            component.set('v.buttonvarient5','Neutral')
+                            component.set('v.buttonvarient6','Neutral')
+                        }
+                        if(i==5) {
+                            helper.handleClickFive(component,event,helper)
+                            component.set('v.buttonvarient1','Neutral')
+                            component.set('v.buttonvarient2','Neutral')
+                            component.set('v.buttonvarient3','Neutral')
+                            component.set('v.buttonvarient4','Neutral')
+                            component.set('v.buttonvarient5','Brand')
+                            component.set('v.buttonvarient6','Neutral')
+                        }
+                        if(i==6){
+                            i=0;
+                            helper.handleClickSix(component,event,helper)
+                            component.set('v.buttonvarient1','Neutral')
+                            component.set('v.buttonvarient2','Neutral')
+                            component.set('v.buttonvarient3','Neutral')
+                            component.set('v.buttonvarient4','Neutral')
+                            component.set('v.buttonvarient5','Neutral')
+                            component.set('v.buttonvarient6','Brand')
+                        }
+                        console.log('i values : ',i)
+                    }),5000);
+    } 
+    
+})
+        </article>
+    </article>
+</aura:component>
