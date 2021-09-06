@@ -1,0 +1,779 @@
+<template>
+
+    <div class="slds-m-bottom_large">
+        <div class="slds-grid slds-gutters">
+            <div class="slds-col slds-size_3-of-5">
+                <span style='font-family: Arial, Helvetica, sans-serif;font-weight: 500; font-size:30px'>Global Reverse Logistics</span>
+            </div>
+        </div>
+    </div>
+
+    <template if:true={step1}>
+    <div>  
+        <lightning-card class="slds-p-left_medium"> 
+            <div style="padding-left: 20px;">
+                <div style="width: 100%;">
+                    <p style="font-size:15px;"><strong>Customer Name:</strong> {LoginAccount_Name}</p>
+                    <p style="font-size:15px; display: inline-block">Select return type:</p>
+                    <div style="width: 20%;display: inline-block;margin-left:40px;">
+                        <lightning-combobox
+                            name="Return Type"
+                            value={selectedReturnType}
+                            options={returnTypeOptions}
+                            onchange={handleReturntype}></lightning-combobox>
+                    </div>
+                    <!--placeholder="Select Return Type"-->
+                    <!--disp PO orders-->
+                    <!--placeholder="Select Purchase Orders"-->
+                    <div>
+                        <div style="display: inline-block">
+                            <p style="font-size:15px; display: inline-block">Subject:</p>
+                        </div>
+                        <div style="width: 20%;display: inline-block;margin-left:108px;">                    
+                            <lightning-input class="caseSubjt"></lightning-input>
+                        </div>
+                    </div>
+                    <div>
+                        <p style="font-size:15px;display: inline-block">Select purchase orders:</p>
+                        <div style="width: 20%;display: inline-block" class="slds-m-left_x-small">
+                            <lightning-combobox 
+                                name="Purchase Orders"
+                                value={selectedPOValue}
+                                options={POoptions}
+                                onchange={handlePO}></lightning-combobox>
+                        </div>
+                        <!--disp selected options as pills-->
+                        <div class="slds-m-left_x-small pillbox" style="width: 30%;margin-left:160px;">
+                            <lightning-pill-container class ='pillbox' items={addpills} onitemremove={removePillItem}></lightning-pill-container>
+                        </div>
+                    </div>
+                </div>       
+            </div>
+        </lightning-card>
+    </div>
+    </template>
+
+    <template if:true={proceedStep2} >
+        <div class="step2 slds-m-top_large slds-m-bottom_xx-large">
+            <lightning-card title="Purchase Order Items"> 
+                <div style="padding: 0px 0px 0px 0px;">
+                    <div class="slds-m-top_small slds-m-bottom_xx-large">
+                        <lightning-datatable class="POdataTable" key-field="Id" 
+                        suppress-bottom-bar={supp}
+                        data={POrecords}
+                        columns={columns} 
+                        disabled={showTba} 
+                        onrowselection={selectedRecord}  
+                        selected-rows={preSelectedRows}
+                        onsave={handleReturnQuantity}
+                        draft-values={saveDraftValues} 
+                        onclick={removeInlinePopover}
+                        oncancel={clearSelecteData}
+                        ></lightning-datatable> 
+                    </div>
+                    <!--this is {contactId}   onsave={handleSave}-->
+                    <!--<template if:true={showBtn}>
+                    <div class="slds-col slds-size_1-of-3">
+                        <span class="slds-m-horizontal_medium"><lightning-button label="Submit request" variant="brand" onclick={CreateRmaRecord} disabled={finalStepbtn}></lightning-button></span>
+                        <span><lightning-button label="Cancel" variant="brand-outline" onclick={step3} disabled={finalStepbtn}></lightning-button></span>
+                    </div>
+                    </template>-->
+                </div>
+            </lightning-card>
+        </div>
+    </template>
+
+    <template if:true={dispSpinner}>
+        <div class="spinner">
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </div>
+    </template>
+
+    <!--<template if:true={proceedStep3}>
+        <div class="slds-m-bottom_xx-large">
+            <div class="slds-grid slds-gutters">
+                <div class="slds-col slds-size_3-of-6 slds-m-bottom_xx-large slds-m-top_small">
+                    <div style="width: 50%;">                    
+                        <lightning-input label="Subject" class="caseSubjt"></lightning-input>
+                    </div>
+                    <lightning-textarea placeholder="describe your request" class="caseDesc"></lightning-textarea>
+                </div>
+                <div class="slds-col slds-size_1-of-6">
+                </div>
+            </div>
+            <div class="slds-col slds-size_1-of-3 slds-m-top_medium" >
+                <span class="slds-m-right_large "><lightning-button label="Submit request" variant="brand" onclick={CreateRmaRecord}></lightning-button></span>
+                <span><lightning-button label="Back" onclick={returnTstep2}></lightning-button></span>
+            </div>
+        </div>
+        <hr style="margin-bottom: 0;">
+    </template>-->
+
+    <!--<div class="step1btu slds-m-top_large slds-m-bottom_xx-large slds-m-right_xx-large" style="float: right">
+        <lightning-button label="Cancel request" onclick={navHomepage}></lightning-button>
+    </div>-->
+
+</template>
+------------------------------------JS--------------------------------------
+import { api, LightningElement, track, wire } from 'lwc';
+import { NavigationMixin } from 'lightning/navigation';
+
+import { getRecord, getFieldValue } from "lightning/uiRecordApi";
+import CONTACT_ID from "@salesforce/schema/User.ContactId";
+import ACCOUNT_ID from "@salesforce/schema/User.AccountId";
+import USER_ID from '@salesforce/user/Id'
+import Case_Number from "@salesforce/schema/Case.CaseNumber";
+
+import displayPurchaseOrderNumbers from '@salesforce/apex/rmaPurchaseOrderController.displayPurchaseOrderNumbers';
+import getSelectedPurchaseOrders from '@salesforce/apex/rmaPurchaseOrderController.getSelectedPurchaseOrders';
+import getCaseData from '@salesforce/apex/rmaPurchaseOrderController.getCaseData';
+
+import { createRecord } from 'lightning/uiRecordApi';
+import { getObjectInfo } from 'lightning/uiObjectInfoApi';
+import Case_Object from '@salesforce/schema/Case';
+import CaseLineItem_Object from '@salesforce/schema/R4C_Case_Line_Item__c';
+import { getPicklistValuesByRecordType } from 'lightning/uiObjectInfoApi';
+
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import { refreshApex } from '@salesforce/apex';
+
+
+
+export default class RmaPurchaseOrder extends NavigationMixin(LightningElement) {
+    @track LoginAccount_Name;
+    @track POrecords;
+    @track step1 = true;
+    
+    @track proceedStep2 = true;
+    @track proceedStep3 = true;
+
+    @track disablebtu = true;
+    @track disableTbl = false;
+
+    @track dispSpinner = false;
+    @track showBtn = false;
+
+    @track selectedPO = [];
+    @track rmarecord=null;
+    @track columns = [
+        {label:'PO#', fieldName:'PO__c', type:'text'},
+        {label:'SO#', fieldName:'SO__c', type:'text'},
+        {label:'PO Date', fieldName:'PO_Date__c',type:'text'},
+        {label:'Sold To', fieldName:'Sold_To__c', type:'text'},
+        {label:'Ship To', fieldName:'Ship_To__c', type:'text'},
+        {label:'Line Item', fieldName:'Line_Item__c', type:'text'},
+        {label:'Intel Product Number', fieldName:'MMID__c',type:'text'},
+        {label:'Intel Product Name', fieldName:'Intel_Product_Name__c', type:'text'},
+        {label:'Customer Part Number', fieldName:'Stocking_ID__c', type:'text'},
+        {label:'Quantity', fieldName:'Quantity__c', type:'text'},
+
+        {label:'Return Quantity',fieldName:'return_quantity', type:'number',editable: true},
+
+        {label:'Billed Quantity', fieldName:'Billed_Quantity__c',type:'text'},
+        {label:'Net value', fieldName:'Net_Value__c', type:'currency'},
+    ]
+
+    @track POoptions=[];
+    @track selectedPOValue = 'null';
+    @track addpills = [];
+    genPillarr = [];
+    @track infoText;
+
+    connectedCallback(){
+        console.log(USER_ID);
+    }
+    myDiv
+    checkbox
+    renderedCallback(){
+        const style = document.createElement('style')
+        style.innerText = `.slds-pill_container{
+            border:0px;
+        }`
+        this.template.querySelector('lightning-pill-container').appendChild(style)
+    }
+
+    OPOptions = [];
+    @wire(displayPurchaseOrderNumbers,{userid:USER_ID}) Purchaseorders({data, error}){
+        if(data){
+            console.log(data);
+            const purchaseO = data
+            let res = Object.values(purchaseO);
+            for(let i = 0; i<res.length; i++){
+                //console.log(res[i].PO_Number__c)
+                if(this.OPOptions.indexOf(res[i].PO_Number__c) == -1){
+                    //console.log(true);
+                    this.OPOptions.push(res[i].PO_Number__c)
+                }
+                //console.log(this.OPOptions);
+            }
+            //console.log(this.OPOptions)
+            this.POoptions = this.genPOptions(this.OPOptions)
+
+            data.forEach(row=>{
+                this.LoginAccount_Name = row.Account_Name__r.Name;
+            })
+        }
+        if(error){
+         console.log(error);
+        }
+    }
+
+    navHomepage(){
+        this[NavigationMixin.Navigate]({
+            type:'standard__webPage',
+            attributes:{
+                    //name: 'Home'
+                "url": "https://isvcr4cpoc-intelcustomersupport.cs35.force.com/R4CPocPortal/s/"
+            }
+        });
+    }
+
+    genPOptions(data){
+        //console.log(data)
+        return data.map(item=>({label:item, value:item}))
+    }
+    
+    storedPOrecords = [];
+    recordCopyId = [];
+    handlePO(event){
+        this.selectedPOValue =event.detail.value;
+        //console.log(this.selectedPOValue);
+        //this.getSelectedPurchaseOrders();
+
+        const index = this.OPOptions.indexOf(this.selectedPOValue);
+        //console.log(index)
+        
+        if (index > -1) {
+            this.OPOptions.splice(index, 1);
+        }
+        //console.log(this.OPOptions)
+        this.POoptions = this.genPOptions(this.OPOptions)
+        
+        this.genPillarr.push(this.selectedPOValue);
+        //console.log(this.genPillarr);
+        this.addpills = this.generatePOPills(this.genPillarr);
+
+        getSelectedPurchaseOrders({selectedPurchaseOrders:this.genPillarr})
+        .then(result =>{
+            console.log(result);
+            let recdata=[]
+            const records = result;
+            let recordvalues = Object.values(records);
+            for(let j=0; j<recordvalues.length; j++){
+                recdata.push(recordvalues[j])
+            }
+            this.recordCopyId = recdata
+            console.log(this.recordCopyId)
+
+
+            let currentData = [];
+            result.forEach(row => {
+                let rowData = {};
+
+                rowData.Id = row.Id;
+                rowData.PO__c = row.PO__c;
+                rowData.SO__c = row.SO__c;
+                rowData.PO_Date__c = row.PO_Date__c;
+                rowData.Line_Item__c = row.Line_Item__c; 
+                rowData.Intel_Product_Name__c = row.Intel_Product_Name__c;
+                rowData.Quantity__c = row.Quantity__c;
+                rowData.return_quantity = row.Billed_Quantity__c;
+                rowData.Billed_Quantity__c = row.Billed_Quantity__c;
+                rowData.Net_Value__c = row.Net_Value__c;
+
+                if(row.MMID__r){
+                    rowData.MMID__c = row.MMID__r.Name;
+                }
+                if(row.Stocking_ID__r){
+                    rowData.Stocking_ID__c =row.Stocking_ID__r.Name
+                }
+                if(row.Ship_To__r){
+                    rowData.Sold_To__c = row.Ship_To__r.Name;
+                }
+                if(row.Sold_To__r){
+                    rowData.Ship_To__c = row.Sold_To__r.Name;
+                }
+                currentData.push(rowData);
+            });
+            this.POrecords = currentData;
+            //console.log(currentData)
+            this.storedPOrecords = currentData
+            //console.log(this.storedPOrecords);
+        })
+        .catch(error =>{
+            console.log(error);
+        })
+        
+        if(this.selectedPOValue != null){
+            this.disablebtu = false;
+        }
+    }
+    generatePOPills(data){
+        //console.log(data);
+        return data.map(item=>({label:item, value:item}));
+    }
+    
+    
+
+    removePillItem(event){
+        const index = event.detail.index;
+        let indval = this.addpills[index];
+        this.infoText = indval.label;
+
+        this.OPOptions.push(this.infoText);
+        this.POoptions = this.genPOptions(this.OPOptions)
+
+        //console.log(index);
+        //console.log(this.infoText)
+        if(index > -1){
+            this.addpills.splice(index,1);
+            this.genPillarr.splice(index,1);
+            this.selectedPOValue = '';
+        }
+        this.disablebtu = false;
+
+        getSelectedPurchaseOrders({selectedPurchaseOrders:this.genPillarr})
+        .then(result =>{
+            //console.log(result);
+            let currentData = [];
+            result.forEach(row => {
+                let rowData = {};
+                rowData.Id = row.Id;
+                rowData.PO__c = row.PO__c;
+                rowData.SO__c = row.SO__c;
+                rowData.PO_Date__c = row.PO_Date__c;
+                rowData.Line_Item__c = row.Line_Item__c; 
+                rowData.Intel_Product_Name__c = row.Intel_Product_Name__c;
+                rowData.Quantity__c = row.Quantity__c;
+                rowData.return_quantity = row.Billed_Quantity__c;
+                rowData.Billed_Quantity__c = row.Billed_Quantity__c;
+                rowData.Net_Value__c = row.Net_Value__c;
+
+                if(row.MMID__r){
+                    rowData.MMID__c = row.MMID__r.Name;
+                }
+                if(row.Stocking_ID__r){
+                    rowData.Stocking_ID__c =row.Stocking_ID__r.Name
+                }
+                if(row.Ship_To__r){
+                    rowData.Sold_To__c = row.Ship_To__r.Name;
+                }
+                if(row.Sold_To__r){
+                    rowData.Ship_To__c = row.Sold_To__r.Name;
+                }
+                currentData.push(rowData);
+            });
+            this.POrecords = currentData;
+        })
+        .catch(error =>{
+            console.log(error);
+        })
+        
+        this.getpreselectedRow()
+    }
+
+    @track preSelectedRows=[];
+    @track selPOdata=[]
+
+    getpreselectedRow(){
+        
+        console.log(this.selPOdata)
+        const recordvalues = this.selPOdata;
+        let recid = Object.values(recordvalues)
+        let list = [];
+        for(let i=0; i<recid.length; i++){
+            list.push(recid[i]);
+            console.log(list);
+        }
+        this.preSelectedRows = list
+
+    }
+    
+    @track recordDataPo = [];
+    selectedRowsLenght = null;
+    selectedRecord(event){
+
+            const styling = document.createElement('style');
+
+            styling.innerText = `.slds-checkbox .slds-checkbox_faux, .slds-checkbox .slds-checkbox--faux{
+                border-width: var(--lwc-borderWidthThin,1px);
+                border-style: solid;
+                border-color: var(--sds-c-checkbox-color-border, var(--lwc-colorBorderInput,#D4D4D4));
+            }`
+        this.template.querySelector('lightning-datatable').appendChild(styling);
+        
+
+
+
+        const POselectedobj = this.template.querySelector('.POdataTable').getSelectedRows()
+        console.log(POselectedobj)
+        let lists = [];
+        let recordData = [];
+        let objval = Object.values(POselectedobj)
+        this.selectedRowsLenght = objval.length;
+        console.log(objval.length);
+        if(objval.length != 0){
+            this.saveDraftValues = ['null'];
+            this.supp = false;
+
+            //this.finalStepbtn = false;
+            //this.showBtn = true;
+        }
+        if(objval.length == 0){
+            //this.finalStepbtn = true;
+            this.supp = true;
+        }
+        for(let i=0; i<objval.length; i++){
+            //console.log(objval[i].Id);
+            lists.push(objval[i].Id)
+            recordData.push(objval[i])
+        }
+        this.recordDataPo = recordData;
+        this.selPOdata = lists;
+        //console.log(this.selPOdata)
+        //console.log(this.recordDataPo)
+        //this.getpreselectedRow()
+    }
+
+    @track Custrecordtypeid;
+
+    @wire(getObjectInfo, {objectApiName:Case_Object})
+    caseObjectInfo({data, error}){
+        if(data){
+            //console.log(data)
+            const recordids = data.recordTypeInfos;
+            //console.log(recordids)
+            let recordvalues = Object.values(recordids);
+
+            for(let i = 0; i < recordvalues.length; i++) {
+                if(recordvalues[i].name == 'Stock Rotation') {
+                    this.Custrecordtypeid = recordvalues[i].recordTypeId;
+                }
+            }
+            console.log(this.Custrecordtypeid);
+        }
+        if(error){
+            console.log(error)
+        }
+    }
+    
+    @wire(getRecord, { recordId: USER_ID, fields: [CONTACT_ID, ACCOUNT_ID] })
+    user;
+
+    caseRecordsFields={}
+    caseLineItemFields={}
+    @track conid;
+    @track accid;
+
+    @track CreatedCaseid;
+    //"Name":                 listPO[i].PO__c,
+
+    createRmaCaseLineitems(){
+        let data = this.values;
+        console.log(data);
+        
+        let recids = this.recordCopyId
+        console.log(recids)
+        
+        const selectedPO = this.recordDataPo;
+        console.log(this.recordDataPo);
+
+        let listPO = Object.values(selectedPO);
+
+        for(let i=0; i < listPO.length; i++){
+
+            for(let x=0; x< data.length; x++){
+
+                if(data[x].Id == listPO[i].Id){
+
+                    for(let y=0; y < recids.length; y++){
+
+                        if(recids[y].Id == listPO[i].Id){
+                            console.log(recids[y].Id)
+                            console.log(listPO[i].Id)
+                            console.log(data[x].Id)
+                            console.log(data[x].return_quantity)
+                            this.caseLineItemFields={
+                            "Name":                 this.subjectValue,
+                            "Case__c":              this.CreatedCaseid,
+                            "PO__c":                listPO[i].PO__c,
+                            "SO__c":                listPO[i].SO__c,
+                            "PO_Date__c":           listPO[i].PO_Date__c,
+                            "Ship_To__c":           recids[y].Ship_To__c,
+                            "Line_Item__c":         listPO[i].Line_Item__c,
+                            "Sold_To__c":           recids[y].Sold_To__c,
+                            "Quantity__c":          listPO[i].Quantity__c,
+                            "Billed_Quantity__c":   listPO[i].Billed_Quantity__c,
+                            "Return_Quantity__c":   data[x].return_quantity,
+                            "Net_Value__c":         listPO[i].Net_Value__c,
+                            "Return_Type__c":       this.selectedReturnType,
+                            "MMID__c":              recids[y].MMID__c,
+                            "Stocking_ID__c":       recids[y].Stocking_ID__c
+                            }
+                            console.log(this.caseLineItemFields)
+                            
+                            const caseLineItemRecordInput = {apiName:CaseLineItem_Object.objectApiName, fields:this.caseLineItemFields}
+                            createRecord(caseLineItemRecordInput).then(newrecord=>{
+                                
+                            console.log(newrecord.id)
+
+                            this.caseLineItemFields = {};
+                            this.CreatedCaseid = null;
+                            //CreatedCaseid = result.CaseNumber;
+                            }).catch(error=>{
+                                console.log(error)
+                            })
+                        }
+                    }
+                }
+            }
+        }
+        //this.dispSpinner = true;
+        /**/
+
+        //this.navHomepage();
+    }
+
+    selectedReturnType ='';
+    @track returnTypeOptions =[];
+    @wire(getPicklistValuesByRecordType, {objectApiName:Case_Object, recordTypeId:'$Custrecordtypeid'})
+    getCaseobjPicklists({data, error}){
+        if(data){
+            console.log(data)
+            this.returnTypeOptions = this.createPicklistdata(data.picklistFieldValues.Return_Type__c)
+        }
+        if(error){
+            console.log(error);
+        }
+    }
+
+    createPicklistdata(data){
+        return data.values.map(item=>({ label:item.label, value:item.value}))
+    }
+
+    handleReturntype(event){
+        this.selectedReturnType = event.detail.value;
+        console.log(this.selectedReturnType);
+    }
+
+    saveDraftValues = [];
+    finalStepbtn = true;
+    supp = true;
+    values;
+    subjectValue;
+
+    handleReturnQuantity(event){
+        this.saveDraftValues = event.detail.draftValues;
+        //console.log(this.saveDraftValues)
+
+        let editedData = Object.values(this.saveDraftValues);        
+        if(editedData.length != 0){
+            const recordInputs = this.saveDraftValues.slice().map(draft => {
+                const fields = Object.assign({}, draft);
+                //console.log( {fields} );
+                return fields;
+            });  
+            this.values = recordInputs
+            console.log(recordInputs)
+
+            const actualRecData = this.storedPOrecords;
+            let getValues = Object.values(actualRecData);
+
+            for(let j=0; j<editedData.length; j++){
+                for(let k=0; k<getValues.length; k++){
+                    if(editedData[j].Id == getValues[k].Id){
+                        console.log(editedData[j].Id)
+                        console.log(editedData[j].return_quantity)
+                        console.log(getValues[k].Id)
+                        console.log(getValues[k].Quantity__c)
+                        if(editedData[j].return_quantity > getValues[k].Quantity__c){
+                            const style = document.createElement('style');
+                            style.innerText = `.slds-cell-edit{
+                                color: red;
+                            }`
+                            this.template.querySelector('lightning-datatable').appendChild(style);
+
+
+                            return alert('Return quantity should not be greater than PO quantity');
+                        }
+                    }
+                }
+            }
+            console.log('if condition satisfied')
+
+            /*let quantity = recordInputs[0].return_quantity;
+            let quantityid =  recordInputs[0].Id;
+            //console.log("rQuantity: "+quantity+" Id: "+quantityid);
+
+            //console.log(this.storedPOrecords);
+            let POquantity;
+            let POquantityid;
+            const actualRecData = this.storedPOrecords;
+            let getValues = Object.values(actualRecData);
+            for(let i = 0; i<getValues.length; i++){
+                if(quantityid == getValues[i].Id){
+                    POquantityid = getValues[i].Id
+                    POquantity = getValues[i].Quantity__c
+                    //console.log('ok')
+                }
+            }*/
+            //console.log(POquantity)
+            //console.log(POquantityid)
+        
+            /*if(quantity > POquantity){
+                //this.finalStepbtn = true
+                return alert('Return quantity should not be greater than PO quantity');
+            }
+            if(quantity <= POquantity){
+                this.finalStepbtn = false
+            }*/
+
+            //Case Record Creation
+
+            let sub = this.template.querySelector('.caseSubjt').value
+            this.subjectValue = sub;
+
+            this.conid = getFieldValue(this.user.data, CONTACT_ID);
+            this.accid = getFieldValue(this.user.data, ACCOUNT_ID);
+
+            this.caseRecordsFields = {
+                "RecordTypeId":this.Custrecordtypeid,
+                "Subject" : sub,
+                "Status":'Open',
+                "Priority":'Medium',
+                "ContactId":this.conid,
+                "AccountId":this.accid,
+                "Return_Type__c":this.selectedReturnType
+            }
+            console.log(this.caseRecordsFields)
+
+            const caserecordInput = {apiName:Case_Object.objectApiName, fields:this.caseRecordsFields}
+            createRecord(caserecordInput).then(result=>{
+                this.CreatedCaseid = result.id;
+                console.log(this.CreatedCaseid)
+
+                getCaseData({caseid:this.CreatedCaseid})
+                .then(caseHandler=>{
+                    console.log(caseHandler)
+                    let caseNo = caseHandler[0].CaseNumber;
+                    this.caseRecordsFields = {};
+                    this.showToastmsg('Success', `request submitted case No ${caseNo}`);
+
+                    this.createRmaCaseLineitems();
+                    clearTimeout(this.timeoutId);
+                    this.timeoutId = setTimeout(this.navHomepage.bind(this),3000);
+
+                    //this.navtoHome();
+                    console.log('created cases')
+                    //clearTimeout(this.timeoutId);
+                    //this.timeoutId = setTimeout(this.navHomepage.bind(this),3000);
+                    console.log('after time out')
+                    //this.navHomepage();
+                }).catch(error=>{
+                    console.log(error)
+                })
+            }).catch(error=>{
+                console.log(error)
+                this.showToastmsg('Error Creating record', error.body.message, 'error')
+            })
+            this.dispSpinner = true;
+        }
+        if(editedData.length == 0){
+            alert('Manage your return quantity to submit your request');
+        }
+    }
+
+    removeInlinePopover(){
+
+        //aria-selected="false"
+        //let edt = this.template.querySelector('.slds-cell-edit');
+        //edt.setAttribute('aria-selected', false);
+
+        console.log(this.selectedRowsLenght)
+        const styling = document.createElement('style');
+            styling.innerText = `.slds-popover{
+                width: 200px;
+            }`
+
+        if(this.selectedRowsLenght == null || this.selectedRowsLenght == 0){
+            console.log('lenght is null')
+            /*styling.innerText = `.slds-popover{
+                visibility: hidden;
+            }`*/
+            //alert('Select line item');
+            styling.innerText = `.slds-checkbox .slds-checkbox_faux, .slds-checkbox .slds-checkbox--faux{
+                border: 1px solid red;
+            }`
+        }
+        this.template.querySelector('lightning-datatable').appendChild(styling);
+
+    }
+    clearSelecteData(){
+        this.template.querySelector('lightning-datatable').maxRowSelection=[];
+    }
+
+    
+    showToastmsg(title, message, variant){
+        this.dispatchEvent(new ShowToastEvent({
+            title,
+            message,
+            variant: variant || 'success'
+        }))
+    }
+
+    
+    /*delaymethod(delattime){
+        return new Promise(resolve => {
+            setTimeout(() => {
+              resolve(2);
+            }, delattime);
+          });
+    }
+
+    async navtoHome(){
+        console.log('testmethod');
+        let delayres = await this.delaymethod(6000);
+        console.log('after delay');
+        this.navHomepage();
+
+    }/*
+
+    //showToast(title, message)
+    
+    /*step2(event){
+        //this.disablebtu = true;
+        this.proceedStep2 = true;
+    }*/
+
+    /*step3(event){
+        this.dispSpinner = true;
+        clearTimeout(this.timeoutId);
+        this.timeoutId = setTimeout(this.getToStepthree.bind(this),1000);
+    }*/
+    /*getToStepthree(){
+        this.dispSpinner = false;
+
+        this.proceedStep3 = true;
+        this.proceedStep2 = false;
+        this.step1 = false;
+    }*/
+
+    /*returnTstep2(event){
+        this.dispSpinner = true;
+        clearTimeout(this.timeoutId);
+        this.timeoutId = setTimeout(this.getToStepTwo.bind(this),1000);
+    }*/
+    /*getToStepTwo(){
+        this.dispSpinner = false;
+
+        this.proceedStep3 = false;
+        this.proceedStep2 = true;
+        this.step1 = true;
+        this.getpreselectedRow()
+
+    }*/
+
+    
+}
+----------------------------------------------------------------------------------------------------------------------
+
