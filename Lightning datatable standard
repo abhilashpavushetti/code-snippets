@@ -1,0 +1,178 @@
+<template>
+    <div class="slds-m-bottom_large">
+        <div class="slds-grid slds-gutters">
+            <div class="slds-col slds-size_4-of-5" style='font-weight: 500;font-size: 18px'>
+                <span>RMA Case Line Item History</span>
+            </div>
+        </div>
+    </div>
+        <lightning-card title="">          
+        <div class="slds-m-top_large">
+            <div style="slds-col slds-align_absolute-center slds-size_2-of-8" >                 
+            <template if:true={caseLineItems}>
+                <div class = "myUniqueTable">
+            <lightning-datatable draft-values={draftValues}  
+                                show-row-number-column 
+                                onsave={handleSave} 
+                                key-field="Id" 
+                                data={caseLineItems} 
+                                columns={columns}
+                                hide-checkbox-column="true"
+                                onrowselection={updateSelected}
+                                onrowaction={callRowAction}  ></lightning-datatable>
+                </div> 
+          </template> 
+            
+            </div>                          
+        </div>
+    </lightning-card>
+</template>
+-----------------------------------------------JS--------------------------------------------------------
+import { LightningElement, wire, track, api} from 'lwc';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import getSelectedCaseLineItems from '@salesforce/apex/rmaCaseLineItemController.getSelectedCaseLineItems';
+import { refreshApex } from '@salesforce/apex';
+import { updateRecord } from 'lightning/uiRecordApi';
+import { NavigationMixin } from 'lightning/navigation';
+
+    const columns = [ 
+
+       
+        {label:'Approval status', fieldName:'Approval_status__c', type: 'boolean',editable: true, initialWidth: 120},
+        {type: "button",label: 'View', initialWidth: 80, typeAttributes: 
+        {  
+        label: 'View',  
+        name: 'View',  
+        title: 'View',  
+        disabled: false,  
+        value: 'view',
+        iconPosition: 'right'     
+        }
+    },
+        {label:'PO#', fieldName:'PO__c', type:'text', initialWidth: 70},        
+        {label:'SO#', fieldName:'SO__c', type:'text', initialWidth: 70},
+        {label:'PO Date', fieldName:'PO_Date__c',type:'date', initialWidth: 120},
+        {label:'Sold To', fieldName:'Sold_To__r.Name', type:'text', initialWidth: 120},
+        {label:'Ship To', fieldName:'Ship_To__r.Name', type:'text', initialWidth: 120},
+        {label:'Line Item', fieldName:'Line_Item__c', type:'text', initialWidth: 120},
+        {label:'Intel Product Number', fieldName:'MMID__r.Name',type:'number',cellAttributes: { alignment: 'left' }, initialWidth: 120},
+        {label:'Intel Product Name', fieldName:'Intel_Product_Name__c', type:'text',cellAttributes: { alignment: 'left' }, initialWidth: 120},
+        {label:'Customer Part Number', fieldName:'Stocking_ID__r.Name', type:'text', initialWidth: 120},
+        {label:'Quantity', fieldName:'Quantity__c', type:'text', initialWidth: 120},
+        {label:'Return Quantity',fieldName:'Return_Quantity__c', type:'number',cellAttributes: { alignment: 'left' }, initialWidth: 120},
+        {label:'Billed Quantity', fieldName:'Billed_Quantity__c',type:'text', initialWidth: 120},
+        {label:'Net value', fieldName:'Net_Value__c', type:'currency',cellAttributes: { alignment: 'left' }, initialWidth: 120},
+        
+    ]
+
+
+export default class RmaCaseLineItem extends NavigationMixin(LightningElement) {
+    
+    @api recordId;
+    objectApiName = 'R4C_Case_Line_Item__c'; 
+    @track rmarecord;
+    @track conid;
+    @track error;
+    @track draftValues = [];
+    @track result;
+    @track cases;
+    @track caseLineItems;
+    @track data;
+    @track caseLine;
+    @track Name;
+     columns = columns;
+    
+     /* @wire(getSelectedCaseLineItems, {caseid: '$recordId'})
+       caseLine; */
+
+       @wire(getSelectedCaseLineItems, {caseid: '$recordId'})
+       caseLineItems({ error, data }){
+           if(data)
+           {
+               console.log(data);
+               this.caseLineItems = data.map(
+                  record => Object.assign(
+                      {"Sold_To__r.Name": record.Sold_To__r.Name, "Ship_To__r.Name": record.Ship_To__r.Name,
+                        "MMID__r.Name": record.MMID__r.Name, "Stocking_ID__r.Name": record.Stocking_ID__r.Name
+                       },
+                      record
+                  ) 
+               );
+           }
+           else if(error){
+               this.error = error;
+		        this.caseLineItems = undefined;
+           }
+       } 
+
+    handleSave(event){
+      //  this.draftValues = event.detail.draftValues;
+      console.log(event.detail.draftValues);
+        const recordInputs = event.detail.draftValues.slice().map(draft => {
+            const fields = Object.assign({}, draft);
+            return { fields };
+        });
+         console.log('RECORDINPUTS', JSON.stringify(recordInputs));
+
+        // Updating the records using the UiRecordAPi
+        const promises = recordInputs.map(recordInput => updateRecord(recordInput));
+        Promise.all(promises).then(result => {
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Success',
+                    message: 'Records Updated Successfully!!',
+                    variant: 'success'
+                })
+            );
+                 this.draftValues = [];
+            // Display fresh data in the datatable
+                 return refreshApex(this.caseLineItems);
+        }).catch(error => {
+            this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Error',
+                    message: 'An Error Occured!!',
+                    variant: 'error'
+                })
+            );
+        }) /* .finally(() => {
+            this.draftValues = [];
+        }); */
+    
+    }
+    // This function is used to refresh the table once data updated
+    async refresh() {
+        await refreshApex(this.caseLineItems);
+    } 
+    callRowAction( event ) { 
+        const recId  =  event.detail.row.Id;  
+        const actionName = event.detail.action.name; 
+        console.log(actionName);
+    if ( actionName === 'View') {
+        // View a custom object record.
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                recordId: recId ,
+              //  objectApiName: 'Case', // objectApiName is optional
+                actionName: 'view'
+            },
+        });
+    } else if ( actionName === 'Edit' ) {  
+  
+            this[NavigationMixin.Navigate]({  
+                type: 'standard__recordPage',  
+                attributes: {  
+                    recordId: recId ,  
+                    objectApiName: 'Case',  
+                    actionName: 'edit'  
+                }  
+            })  
+  
+        }
+    
+    
+    } 
+  
+} 
+---------------------------------------------------------------------------------------------------------------------------------
