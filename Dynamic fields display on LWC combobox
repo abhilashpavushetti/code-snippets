@@ -1,0 +1,43 @@
+@track Options =[];
+    setofAddress= [];
+    @wire(getCollectionAddress, {userid: USER_ID})
+    wiredclass({data, error}){
+        if(data){
+            console.log(data);
+            const addressVal = data;
+            let setOptions = Object.values(addressVal);
+            for(let i = 0; i<setOptions.length; i++){
+                //console.log(setOptions[i].r4c_Street1__c+','+setOptions[i].r4c_Street2__c+','+setOptions[i].r4c_City__c)
+                this.setofAddress.push(setOptions[i].r4c_Street1__c+','+setOptions[i].r4c_Street2__c+','+setOptions[i].r4c_State_Province__c+','+setOptions[i].r4c_City__c+','+setOptions[i].Country__c+','+setOptions[i].r4c_Zip_Postal_Code__c);
+            }
+            console.log(this.setofAddress);
+            this.Options = this.genSiteAddress(this.setofAddress);
+
+        }
+        if(error){
+            console.log(error);
+        }
+        }
+
+    genSiteAddress(data){
+        //console.log(data)
+        return data.map(item=>({label:item, value:item}))
+    }
+
+    handleChange(event) {
+        alert(event.detail.value);
+    }
+    -----------------------------------APEX CLASS----------------
+    public class clssname{
+    public static List<r4c_Collection_Address__c> getCollectionAddress(String userid){
+
+        Id LoggedInUserID = userid;
+        User getcustomerUserId = [Select ID,AccountId From User WHERE ID=: LoggedInUserID];
+        ID customerAccount = getcustomerUserId.AccountId;
+
+        List<r4c_Collection_Address__c> collectionAddress = new List<r4c_Collection_Address__c>();
+        collectionAddress =  [SELECT ID,r4c_Street1__c,r4c_Street2__c,r4c_City__c,r4c_Zip_Postal_Code__c,
+                            r4c_State_Province__c,Country__c FROM r4c_Collection_Address__c WHERE Account_Name__r.Id =: customerAccount];
+  return collectionAddress;
+  }
+  }
