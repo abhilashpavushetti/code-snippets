@@ -1,0 +1,138 @@
+<template>
+    <div style="margin-left: 30px; width:5px" class="tooltip">
+     <!-- <section tabindex="-1" role= "note" class="slds-modal slds-fade-in-open"> -->
+      <div class={setclass}>
+        <lightning-badge label={poNumber} icon-name="utility:cart" class="slds-m-top_x-small slds-m-bottom_small slds-m-left_medium"></lightning-badge>
+        <div class="detail_margin">
+          <p style="display: inline-block;"><strong>Sold To</strong></p>
+          <p style="color: #0071C5;display: inline-block; margin-left: 100px;">{soldToName}</p>
+        </div>
+        <div class="detail_margin">
+          <p style="display: inline-block;"><strong>Ship To</strong></p>
+          <p style="color: #0071C5;display: inline-block;margin-left: 100px;">{shipToName}</p>
+        </div>
+        <div class="detail_margin">
+          <p style="display: inline-block;"><strong>So#</strong></p>
+          <p style="display: inline-block;margin-left: 118px;">{so}</p>
+        </div>
+        <div class="detail_margin">
+          <p style="display: inline-block;"><strong>Intel Product Name</strong></p>
+          <p class="ptag" style="width: 20px;"></p>
+        </div>
+        <div class="detail_margin">
+          <p style="display: inline-block;"><strong>Quantity</strong></p>
+          <p style="display: inline-block;margin-left: 90px;">{quantity}</p>
+        </div>
+      </div>
+    <!-- </section> -->
+      <div>
+        <lightning-icon class="my-icon" onmouseover={getLayout} size="small" icon-name="utility:info_alt" alternative-text="Getinfo"></lightning-icon>
+      </div>
+    </div>
+</template>
+
+-----------------------------------JS---------------------------------------------
+
+import { api, LightningElement, track, wire} from 'lwc';
+import { getRecord } from 'lightning/uiRecordApi';
+import so  from '@salesforce/schema/Purchase_Order__c.SO__c'
+import IntelProduct  from '@salesforce/schema/Purchase_Order__c.Intel_Product_Name__c'
+import Quantity  from '@salesforce/schema/Purchase_Order__c.Quantity__c'
+import PO_Number  from '@salesforce/schema/Purchase_Order__c.PO_Number__c'
+
+import soCLI  from '@salesforce/schema/R4C_Case_Line_Item__c.SO__c'
+import IntelProductCLI  from '@salesforce/schema/R4C_Case_Line_Item__c.Intel_Product_Name__c'
+import QuantityCLI  from '@salesforce/schema/R4C_Case_Line_Item__c.Quantity__c'
+import PO_NumberCLI  from '@salesforce/schema/R4C_Case_Line_Item__c.PO__c'
+
+
+export default class RmaRowDetailPopUp extends LightningElement {
+    @api rowRecordId;
+    @api soldTo;
+    @api shipTo;
+    @track soldToName;
+    @track shipToName;
+    @track so
+    @track IntelProductNumber
+    @track quantity
+    @track poNumber;
+
+    @wire(getRecord,{recordId:'$rowRecordId',fields:[so,IntelProduct,Quantity,PO_Number]}) 
+    recordHandlerforPortal({data,error}){
+        if(data){
+            this.setclass = 'tooltiptext slds-popover slds-nubbin_top-right potato slds-box';
+            console.log(data.apiName);
+            this.soldToName = this.soldTo;
+            this.shipToName = this.shipTo;
+            this.so = data.fields.SO__c.value;
+            //this.IntelProductNumber = data.fields.Intel_Product_Name__c.value;
+            if(data.fields.Intel_Product_Name__c.value != null && data.fields.Intel_Product_Name__c.value != ''){
+                //this.IntelProductNumber = this.getProperString(data.fields.Intel_Product_Name__c.value)
+                this.template.querySelector(".ptag").innerHTML = data.fields.Intel_Product_Name__c.value;
+            }
+            this.quantity = data.fields.Quantity__c.value;
+            this.poNumber = data.fields.PO_Number__c.value;
+             
+        }
+        if(error){
+            console.log(error)
+        }
+    }
+
+    @wire(getRecord,{recordId:'$rowRecordId',fields:[soCLI,IntelProductCLI,QuantityCLI,PO_NumberCLI]}) 
+    recordHandler({data,error}){
+        if(data){
+            this.setclass = 'tooltipcli slds-popover slds-nubbin_left-top potato slds-box';
+            console.log(data.apiName);
+            console.log(data);
+            this.soldToName = this.soldTo;
+            this.shipToName = this.shipTo;
+            this.so = data.fields.SO__c.value;
+            //this.IntelProductNumber = data.fields.Intel_Product_Name__c.value;
+            if(data.fields.Intel_Product_Name__c.value != null && data.fields.Intel_Product_Name__c.value != ''){
+                //this.IntelProductNumber = this.getProperString(data.fields.Intel_Product_Name__c.value)
+                this.template.querySelector(".ptag").innerHTML = data.fields.Intel_Product_Name__c.value;
+            }
+            this.quantity = data.fields.Quantity__c.value;
+            this.poNumber = data.fields.PO__c.value;
+        }
+        if(error){
+            console.log(error)
+        }
+    }
+
+    /*Top;
+    Left;
+    getLayout(event){
+        let rect = event.target.getBoundingClientRect();
+        //let x = event.pageX - rect.left; //x position within the element.
+        //let y = event.pageY - rect.top;  //y position within the element.
+        this.Left = event.pageX 
+        let y = event.pageY
+        this.Top = parseInt(y)+40;
+        console.log("Left? : " + this.Left + " ; Top? : " + this.Top + ".");  
+
+    }
+
+    setContainerPosition;
+    addPosition(){
+        this.setContainerPosition =  `position:fixed`
+    }*/
+
+    /*getProperString(value){
+        let customItems = value.split(' ');
+
+        for (let i = 0; i < customItems.length; i++) {
+            let check = customItems.length % 2;
+            if( check == 0){
+            customItems[i] = customItems[i] + "<br>";
+            }
+            else{
+                customItems[i] = customItems[i];
+                }
+        }
+
+        return customItems.join("");;
+    }*/
+}
+------------------------------------------------------------------------------
