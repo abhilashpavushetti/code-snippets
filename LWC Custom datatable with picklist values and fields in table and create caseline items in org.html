@@ -1,0 +1,153 @@
+<template>
+    <div class="slds-grid slds-gutters slds-m-bottom_large slds-m-top_medium">
+        <div class="slds-col slds-size_4-of-5" style='font-weight: 500;font-size: 28px;'>
+            <span class="slds-m-left_xx-large slds-icon slds-icon-text-default slds-icon_large slds-m-right_medium">
+                <lightning-icon class="my-icon" size="large" icon-name="utility:replace" alternative-text="GRL" title="GRL"></lightning-icon>
+            </span>
+            <span>Global Reverse Logistics</span>
+        </div>
+    </div>
+
+    <template if:true={step1}>
+        <div class="slds-m-bottom_x-large">
+            <lightning-card class="slds-p-left_medium">
+                <div style="margin-bottom: 60px;">   
+                    <p style="font-size:15px;padding-left: 20px;margin-top:30px"><strong>Customer Name:&nbsp;</strong> <span style="color: cadetblue;">{LoginAccount_Name}</span></p>
+                    <div style="padding-left: 20px;width: 100%;margin-top:10px" class="slds-grid slds-gutters">
+                        <div class="slds-col slds-size_3-of-6">
+    
+                            <p style="display: inline-block">Select Return Type</p>
+                            <div style="width: 50%;display: inline-block;margin-left:57px;">
+                                <lightning-combobox class="rtPicklist"
+                                    name="Return Type"
+                                    value={selectedReturnType}
+                                    options={returnTypeOptions}
+                                    onchange={handleReturntype}></lightning-combobox>
+                            </div>
+    
+                            <!--<div>
+                                <p style="display: inline-block">Select Return Type</p>
+                                <select class="slds-select" style="width: 50%;display: inline-block;margin-left:57px;">
+                                    <template for:each = {returnTypeOptions} for:item="listViewItem">
+                                       <option key={listViewItem.value} value={listViewItem.value}>{listViewItem.value}</option>
+                                    </template>
+                               </select>
+                            </div>-->
+                
+                            <div>
+                                <p style="display: inline-block">Subject</p>
+                                <div style="width: 50%;display: inline-block;margin-left:120px;">                    
+                                    <lightning-input class="caseSubjt"></lightning-input>
+                                </div>
+                            </div>
+    
+                            <div>
+                                <p style="display: inline-block">Return PO</p>
+                                <div style="width: 50%;display: inline-block;margin-left:102px;">                    
+                                    <lightning-input class="case-return-po-sub"></lightning-input>
+                                </div>
+                            </div>
+    
+                            <!--<div>
+                                <p style="display: inline-block">Return Reason</p>
+                                <div style="width: 50%;display: inline-block;margin-left:78px;">
+                                    <lightning-combobox 
+                                        name="ReturnReason"
+                                        value={selectedReturnReason}
+                                        options={returnReasonOptions}
+                                        onchange={handleReturnReason}></lightning-combobox> 
+                                </div>
+                            </div>-->
+    
+                            <div>
+                                <p style="display: inline-block">Select Collection Date</p>
+                                <div style="width: 50%; display: inline-block;margin-left:37px;" class="slds-m-left_x-small">
+                                    <lightning-input type="date" onchange={handleCollectionDate}></lightning-input>
+                                </div>
+                            </div>
+                        </div>
+    
+                        <div class="slds-col slds-size_3-of-6">
+                            <div>
+                                <p style="display: inline-block">Select Collection Address</p>
+                                <div style="width: 50%;display: inline-block;margin-left:30px;" class="slds-m-left_x-small">
+                                    <lightning-combobox class="priorityAlign"
+                                        name="Collection Address"
+                                        value={value}
+                                        options={Options}
+                                        onchange={handleChange}
+                                        placeholder="Select Address"></lightning-combobox>
+                                </div>
+                            </div>
+    
+                            <div style="margin-top: 25px; margin-bottom: 8px;">
+                                <p style="display: inline-block">Intel Arranged Collection</p>
+                                <div style="display: inline-block;margin-left:35px;">
+                                    <input type="checkbox">
+                                </div>
+                            </div>
+    
+                            <div>
+                                <p style="display: inline-block">Select Purchase Orders</p>
+                                <div style="width: 50%;display: inline-block;margin-left:43px;">
+                                    <lightning-combobox class="poBox"
+                                        name="Purchase Orders"
+                                        value={selectedPOValue}
+                                        options={POoptions}
+                                        onchange={handlePO}></lightning-combobox>
+                                </div>
+                                <!--disp selected options as pills-->
+                                <div class="slds-m-left_x-small pillbox" style="width: 80%;margin-left:170px;">
+                                    <lightning-pill-container class ='pillbox' items={addpills} onitemremove={removePillItem}></lightning-pill-container>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </lightning-card>
+        </div>
+    </template>
+
+    <template if:true={proceedStep2} >
+        <template if:true ={POrecords}>
+        <div class="step2 slds-m-top_large slds-m-bottom_xx-large">
+            <lightning-card title="Purchase Order Items"> 
+                    <div class="slds-m-top_small slds-m-bottom_xx-large" >
+                        <div class = "myTable">
+                        <c-custom-type-component
+                            class="POdataTable slds-table_header-fixed_container slds-scrollable_x slds-border_top" 
+                            key-field="Id" 
+                            data={POrecords}
+                            columns={columns} 
+                            onrowselection={selectedRecord}  
+                            selected-rows={preSelectedRows}
+                            draft-values={saveDraftValues} 
+                            onsave={handleReturnQuantity}
+                            onclick={removeInlinePopover}
+                            min-column-width="120"
+                            onrowaction={getPopUpInfo}
+                            suppress-bottom-bar={supp}
+                            onpicklistchanged={tablePicklistChanged}
+                            oncancel={clearSelecteData}
+                        ></c-custom-type-component>
+                        <!--oncancel={clearSelecteData}-->
+                        </div> 
+                    </div>
+                    <!--<template if:true={canSubmitCase}>
+                        <div style="text-align: center;">
+                            <lightning-button label="Cancel" title="cancel request" onclick={clearSelecteData} class="slds-m-left_x-small"></lightning-button>
+            
+                            <lightning-button variant="brand" label="Submit Requiest" title="save request" onclick={callSave} class="slds-m-left_x-small"></lightning-button>
+                        </div>
+                    </template>-->
+            </lightning-card>
+        </div>
+        </template>
+    </template>
+
+    <template if:true={dispSpinner}>
+        <div class="spinner">
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </div>
+    </template>
+</template>
