@@ -1,0 +1,51 @@
+public with sharing class rmaCaseLineItemController {
+
+    @AuraEnabled(cacheable=true)
+    public static List<R4C_Case_Line_Item__c> getSelectedCaseLineItems(string caseid){
+        return [SELECT ID,PO__c,Name,Remedy__c,Return_Reason__c,Return_Type__c,Stocking__r.Name,Stocking__c,MMID_BU_Hierarchy__c,MMID_BU_Hierarchy__r.Name, Approval_status__c, 
+                SO__c, PO_Date__c,Sold_To__r.Name,Ship_To__r.Name,Sold_To__c,Ship_To__c,Line_Item__c,
+                MMID__r.Name,Quantity__c,Return_Quantity__c,Billed_Quantity__c,Net_Value__c, 
+                Intel_Product_Name__c, Stocking_ID__r.Name, Customer_Part_Number__c
+                FROM R4C_Case_Line_Item__c where Case__r.Id = :caseid];
+    }
+    @auraenabled
+    public static list<R4C_CASE_LINE_ITEM__C> updateToggle(List<id> cliId){
+      List<R4C_CASE_LINE_ITEM__C> cliList = [select id, approval_status__c, case__r.id from R4C_CASE_LINE_ITEM__C where id = :cliId]
+      List<R4C_CASE_LINE_ITEM> CaseLineItemsList = new List<R4C_CASE_LINE_ITEM__C>();
+      for(R4C_CASE_LINE_ITEM__C cli : cliList){
+      cli.approval_status__c = true;
+      CaseLineItemsList.add(cli);
+      }
+      try{
+      update CaseLineItemsList;
+      }
+      catch(exception e){
+      system.debug('Unable to update' +e.getMessage());
+      }
+      
+      // BASED ON FIELD VALUE(WHICH IS UPDATED ABOVE) THE THE ANOTHER FIELD SHOULD CHANGE
+        List<R4C_Case_Line_Item__c> clis=[select Id,Approval_status__c, Case__r.Id, case__r.OwnerId, case__r.Sync_Status__c, case__r.Approved__c from R4C_Case_Line_Item__c ];
+         List<R4C_Case_Line_Item__c> CaseLineItemlist1 = new List<R4C_Case_Line_Item__c>();
+         system.debug(clis);
+        for(R4C_Case_Line_Item__c cl: clis){
+            if(cl.Approval_status__c == false){
+                cl.case__r.Approved__c = false;
+                break;
+            }
+            else if(cl.Approval_status__c == true){
+               cl.case__r.Approved__c = true;
+               cl.case__r.OwnerId = '00G2g000001VZ0VEAW';
+               cl.case__r.Sync_Status__c = 'Ready to Process';
+                CaseLineItemlist1.add(cl);
+                system.debug(CaseLineItemlist1);
+            }
+
+        }
+       // update CaseLineItemlist1;
+
+//////
+       return getSelectedCaseLineItems(caseid);
+   
+      }
+      }
+      
