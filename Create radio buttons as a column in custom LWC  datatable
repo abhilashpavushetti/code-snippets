@@ -1,0 +1,128 @@
+CREATE CUSTOM COMPONENT AND CREATE HTML
+<template>
+    <c-toggle-button-output 
+        value={value} 
+        button-disabled={typeAttributes.buttonDisabled} 
+        row-id={typeAttributes.rowId}
+        radiovalue={typeAttributes.radiovalue}
+        radiovalue1={typeAttributes.radiovalue1}>
+    </c-toggle-button-output>
+</template>
+
+IN CUSTOM COMP JS
+import toggleButtonColumnTemplate from './toggleButtonColumnTemplate.html';
+export default class CustomTypeComponent extends LightningDatatable {
+    static customTypes = {
+    toggleButton: {
+            template: toggleButtonColumnTemplate,
+            standardCellLayout: true,
+            typeAttributes: ['buttonDisabled', 'rowId', 'radiovalue','radiovalue1'],
+        },
+        }
+        }
+        
+        CALL CUSTOM COMP IN DATATABLE
+        <template if:true={caseLineItems}>
+                <div class = "myUniqueTable">
+            <c-custom-type-component draft-values={draftValues}  
+                                show-row-number-column 
+                                onsave={handleSave} 
+                                key-field="Id" 
+                                data={caseLineItems} 
+                                columns={columns}
+                                hide-checkbox-column="true"
+                                onrowselection={updateSelected}
+                                onrowaction={callRowAction} 
+                                onselectedrec={handleSelectedRec}>
+             </c-custom-type-component>
+                </div> 
+               
+          </template>
+          
+          DATATABLE JS
+          import updateToggle from '@salesforce/apex/rmaCaseLineItemController.updateToggle';
+    const columns = [ 
+    { label: 'Approval Status', fieldName: 'R4C_Approved_Status__c	', type: 'toggleButton', disabled: false, initialWidth: 120,
+           typeAttributes: { 
+                buttonDisabled: { fieldName:'R4C_Approved_Status__c	' }, 
+                rowId: { fieldName: 'getrowIs' }, 
+                radiovalue: {fieldName: 'statusvalue'},
+                radiovalue1: {fieldName: 'statusvalue1'}
+            }
+        },
+        }
+        EXPORT......{
+        @wire(getSelectedCaseLineItems, {caseid: '$recordId'})
+       caseLineItems({ error, data }){     
+           if(data)
+           {
+             console.log('Hello',data);
+               this.caseLineItems = data.map(
+                  record => Object.assign(
+                      {  
+                      "statusvalue": record.R4C_Approved_Status__c	,
+                        "statusvalue1": record.R4C_Approved_Status__c	  
+                       },
+                      record,
+                  ) 
+               );   
+                console.log(this.caseLineItems)           
+           }
+           else if(error){
+               this.error = error;
+		        this.caseLineItems = undefined;
+           }
+       }
+       handleSelectedRec(event){
+     this.saveCase = true;
+      this.currentRecordId=event.detail.value;
+        console.log('sowmyat', this.currentRecordId);
+        const entries = Object.entries(this.currentRecordId);
+        console.log('entries',entries);
+         console.log(entries[1][1]);
+         updateToggle({cliId: entries[0][1], val: entries[1][1]})
+        
+          .then(() => {
+              console.log("updated the record succesfully");
+               this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Success',
+                    message: 'Records Updated Successfully!!',
+                    variant: 'success'
+                })
+            );     
+            return refreshApex(this.caseLineItems);
+             
+        })
+        .catch((error) => {
+            this.errorMessage=error;
+             this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Error',
+                    message: 'An Error Occured!!',
+                    variant: 'error'
+                })
+            );
+			console.log('unable to update the record due to'+JSON.stringify(this.errorMessage));
+        });
+    }
+    }
+    }
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+                      
+        
