@@ -108,8 +108,67 @@ export default class CustomTypeComponent extends LightningDatatable {
     }
     }
     }
-                      
-                      
+   CREATE TOGGLEBUTTON OUTPUT NEW LWC COMP
+   <template>
+   
+    <lightning-radio-group
+        options={options}
+        value={value}
+        onchange={handleChange}
+        disabled={buttonDisabled}>
+    </lightning-radio-group>
+
+  JS--------  
+</template>
+
+import { LightningElement, api } from 'lwc';
+
+export default class ToggleButtonOutput extends LightningElement {
+    @api checked = false;
+    @api buttonDisabled = false;
+    @api rowId;
+     @api cliList;
+      @api radiovalue;
+    
+
+    value = '';
+      options= [
+            { label: 'Approved', value: 'Approved'},
+            { label: 'Rejected', value: 'Rejected'},
+        ];
+     connectedCallback() {
+         console.log("ApprovedValue",this.radiovalue);
+        if(this.radiovalue == 'Approved'){
+            this.value = 'Approved';
+            this.buttonDisabled = true;
+        }
+        else if(this.radiovalue == 'Rejected'){
+            this.value = 'Rejected';
+            this.buttonDisabled = true;
+        }
+        else{
+            this.value = 'None';
+            this.buttonDisabled = false;
+        }
+    }
+    
+  
+    handleChange(event) {
+        const passEvent = new CustomEvent('selectedrec',{ composed: true,
+            bubbles: true,
+            cancelable: true,
+            detail: {
+                value: { rowId: this.rowId, state: event.target.value }
+                 },
+      
+            });
+             this.dispatchEvent(passEvent); 
+         }
+    get getInactiveMsg(){
+        return this.buttonDisabled?'None':'Rejected';
+    }  
+}
+     ---------------------------------------------------------------------------------------                 
                       
                       
                       
