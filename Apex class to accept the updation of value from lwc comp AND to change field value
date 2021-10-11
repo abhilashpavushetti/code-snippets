@@ -1,0 +1,48 @@
+public static List<R4C_Case_Line_Item__c> updatedCLI(List<Id> cliId, decimal val){
+       system.debug(val);
+       Id caseid;
+       List<R4C_Case_Line_Item__c> clilist  = [select Id, Return_Quantity__c, Case__r.Id from R4C_Case_Line_Item__c where Id=:cliId];
+       List<R4C_Case_Line_Item__c> CaseLineItemsList  = new List<R4C_Case_Line_Item__c>();
+       system.debug(clilist);
+       
+        for(R4C_Case_Line_Item__c cli : clilist){
+		    system.debug('aaa'+cliId);
+            system.debug('aaa'+val);
+            cli.Return_Quantity__c = val;
+            caseid = cli.Case__r.Id;
+            CaseLineItemsList.add(cli);
+        }
+        system.debug(CaseLineItemsList);
+        try{
+            update CaseLineItemsList;
+        }
+         catch (Exception e) {
+           System.debug('unable to update the record due to'+e.getMessage());
+       }
+        return getSelectedCaseLineItems(caseid);    
+    }
+    ---------------------------APEX CLASS TO CHANGE FIELD VALUE AND RETURN UPDATED VALUE--------------------------
+    public static List<R4C_Case_Line_Item__c> updateToggle(List<Id> cliId, string val){
+       System.debug('Cli' +cliId);
+       system.debug(val);
+       Id caseid;
+       List<R4C_Case_Line_Item__c> clilist=[select Id,R4C_Approved_Status__c, Case__r.Id  from R4C_Case_Line_Item__c where Id=:cliId];
+       List<R4C_Case_Line_Item__c> CaseLineItemsList  = new List<R4C_Case_Line_Item__c>();
+       system.debug(clilist);
+       for(R4C_Case_Line_Item__c cli:clilist){
+           if( val == 'Approved'){
+                cli.R4C_Approved_Status__c='Approved';
+                caseid = cli.Case__r.Id;
+                CaseLineItemsList.add(cli);
+                system.debug(CaseLineItemsList);
+           }else if(val == 'Rejected'){
+               cli.R4C_Approved_Status__c='Rejected';
+                caseid = cli.Case__r.Id;
+                CaseLineItemsList.add(cli);
+           }
+            else{
+               cli.R4C_Approved_Status__c='None';
+               CaseLineItemsList.add(cli); 
+            }  
+                system.debug(CaseLineItemsList);
+           }
