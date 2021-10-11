@@ -1,0 +1,83 @@
+saveCaseRequest(event){
+
+
+
+        console.log('save action initiated')
+        let count = 0;
+
+        const latestSelectedValue = this.recordDataPo;
+        let listPO = Object.values(latestSelectedValue);
+        console.log(listPO)
+
+        for (let y = 0; y < listPO.length; y++){
+            
+            if (listPO[y].return_quantity > listPO[y].defaultval) {
+                //this.saveDraftValues = ['null']
+                return this.showToastmsg('Alert', 'Return quantity should not greater than billed quantity', 'error')
+            }
+            else{
+                count++;
+            }
+        }
+        console.log(count + '-' + listPO.length)
+
+        if (count == listPO.length) {
+
+            console.log('if condition satisfied')
+          //  return this.caseLineItems;
+        }
+        else {
+            console.log('Alert', 'Unexpected error occurred', 'error')
+        }
+
+
+
+      this.saveCase = true;
+      this.canSubmitCase = true;
+      this.currentRecordId = this.updatedValue;
+        console.log('savefunction'+ this.currentRecordId);
+        const entries = Object.entries(this.currentRecordId);
+        console.log('entries',entries);
+         console.log(entries[1][1]);
+         updatedCLI({cliId: entries[0][1], val: entries[1][1]})
+        
+          .then(() => {
+              console.log("updated the record succesfully");
+               this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Success',
+                    message: 'Records Updated Successfully!!',
+                    variant: 'success'
+                })
+            );     
+            return refreshApex(this.caseLineItems);
+             
+        })
+        .catch((error) => {
+            this.errorMessage=error;
+             this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Error',
+                    message: 'An Error Occured!!',
+                    variant: 'error'
+                })
+            );
+			console.log('unable to update the record due to'+JSON.stringify(this.errorMessage));
+        }); 
+
+
+    }
+    
+    clearSelecteData() {
+        this.template.querySelector('.myUniqueTable1').maxRowSelection = [];
+        const POselectedobj = this.template.querySelector('.myUniqueTable1').getSelectedRows()
+        console.log('selected row details', POselectedobj)
+    }
+    ---------------------------------
+    <template if:true={canSubmitCase}>
+                        <div style="text-align: center;">
+                            <lightning-button label="cancel request" title="cancel request" onclick={clearSelecteData} class="slds-m-left_x-small"></lightning-button>
+            
+                            <lightning-button variant="brand" label="Submit Request" title="save request" onclick={saveCaseRequest} class="slds-m-left_x-small"></lightning-button>
+                        </div>
+                    </template> 
