@@ -1,0 +1,36 @@
+handelReturnQty(event){
+        const {changedQty} = event.detail;
+        const returnval = changedQty;
+        let storedRqtyVal = JSON.parse(JSON.stringify(Object.values(returnval)))
+        this.updatedValue = storedRqtyVal;
+        const entries1 = Object.entries(storedRqtyVal);
+        console.log('entries',entries1);
+         console.log(entries1[1][1]);
+         updatedCLI({cliId: entries1[0][1], val: entries1[1][1]})
+        .then(() => {
+              console.log("updated the record succesfully");
+               this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Success',
+                    message: 'Records Updated Successfully!!',
+                    variant: 'success'
+                })
+            );     
+            return refreshApex(this.caseLineItems);
+             
+        })
+        .catch((error) => {
+            this.errorMessage=error;
+             this.dispatchEvent(
+                new ShowToastEvent({
+                    title: 'Error',
+                    message: 'An Error Occured!!',
+                    variant: 'error'
+                })
+            );
+			console.log('unable to update the record due to'+JSON.stringify(this.errorMessage));
+        });
+
+
+
+    } 
