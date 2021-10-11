@@ -1,3 +1,55 @@
+CREATE CUSTOM COMP 
+<template>
+    <!--HTML template which connect custom column component with custom datatable component-->
+    <c-toggle-button-output 
+        checked={value} 
+        button-disabled={typeAttributes.buttonDisabled} 
+        row-id={typeAttributes.rowId}
+        radiovalue={typeAttributes.radiovalue}>
+    </c-toggle-button-output>
+</template>
+JS-----CUSTOM COMP
+import LightningDatatable from 'lightning/datatable';
+import comboBoxTypeInDataTable from './comboBoxTypeInDataTable.html';
+import rowDetailPopup from './rowDetailPopup.html';
+import lightningInputField from './lightningInputField.html';
+import toggleButtonColumnTemplate from './toggleButtonColumnTemplate.html';
+import rowCheckBox from './rowCheckBox.html';
+
+
+
+export default class CustomTypeComponent extends LightningDatatable {
+    static customTypes = {
+        picklist: {
+            template: comboBoxTypeInDataTable,
+            //standardCellLayout: true,
+            typeAttributes: ['label','options','value','pickListPlaceholder','disComboBox','rendered'],
+        },
+        getpopup:{
+            template:rowDetailPopup,
+            typeAttributes:['rowRecordId','soldTo','shipTo'],
+        },
+        inputField:{
+            template:lightningInputField,
+            typeAttributes:['qtyValue','dispRq','storedvalue','recordId']
+        },
+        checkBoxType: {
+            template:rowCheckBox,
+            typeAttributes:['checkBoxId','hideRowCheckBox']
+        },
+        toggleButton: {
+            template: toggleButtonColumnTemplate,
+            standardCellLayout: true,
+            typeAttributes: ['buttonDisabled', 'rowId', 'radiovalue']
+        }        
+        // Other types here
+    };
+}
+--------------------------------------------------------------------------------------------
+
+
+
+
 <template>
    
     <lightning-icon
@@ -151,6 +203,14 @@ export default class ToggleButtonOutput extends LightningElement {
   cursor: not-allowed;
 }
 
-
+--------------CALL ABOVE COMP IN LWC DATTABLE
+{ label: 'Approval Status', fieldName: 'R4C_Approved_Status__c	', type: 'toggleButton', disabled: false,
+           typeAttributes: { 
+                buttonDisabled: { fieldName:'R4C_Approved_Status__c	' }, 
+                rowId: { fieldName: 'getrowIs' }, 
+                radiovalue: {fieldName: 'statusvalue'},
+                radiovalue1: {fieldName: 'statusvalue1'}
+            }
+        }
 
 
