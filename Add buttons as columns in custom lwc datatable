@@ -1,0 +1,156 @@
+<template>
+   
+    <lightning-icon
+      icon-name="utility:like"
+      onclick={approvehandle}
+      title="Approve"
+       disabled = {buttonDisabled}
+       class = {customclass}>
+    </lightning-icon>
+     <lightning-icon
+      icon-name="utility:dislike"
+      onclick={rejecthandle}
+       disabled = {disabled1}
+       title="Reject"
+       class = {customclass1}>
+    </lightning-icon>
+    
+  
+     
+     
+     <!--
+     
+     <lightning-button 
+      title="Approve"
+      icon-name="utility:like" 
+      value="Approved"
+      onclick={handle}
+      alternative-text="Approved"
+      disabled = {disabled}
+      variant="success">
+    </lightning-button>
+    <lightning-button 
+      class="custom-class"
+      title="Reject"
+      icon-name="utility:dislike"
+      value="Rejected"
+      alternative-text="Rejected"
+      onclick={handle} 
+      variant="destructive"
+      disabled = {disabled}>
+    </lightning-button >
+      <lightning-radio-group
+    
+        options={options}
+        value={value}
+        onchange={handleChange}
+        disabled={buttonDisabled}>
+      
+    </lightning-radio-group>-->
+</template>
+-----------------------------JS-------------------------------------
+import { LightningElement, api, track } from 'lwc';
+
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+
+export default class ToggleButtonOutput extends LightningElement {
+    @api checked = false;
+    @api buttonDisabled = false;
+    @api rowId;
+     @api cliList;
+      @api radiovalue;
+      @api radiovalue1;
+     @track Apbtn = "Approved";
+    @track recbtn = "Rejected";
+    @track customclass;
+    @track disabled = '';
+     @track disabled1 = '';
+    @track customclass1;
+
+
+    disabled = '';
+        
+        connectedCallback() {
+        if((this.radiovalue == "Approved")||(this.radiovalue == "Rejected")){
+             this.customclass ='cursor';
+               this.customclass1 ='cursor';
+               
+            
+        }
+        if(this.radiovalue == "Approved"){
+             this.customclass ='greencolour';
+               
+            
+        }
+        else if(this.radiovalue == "Rejected"){
+             this.customclass1 ='redcolour';
+        }
+        
+        else{
+            this.disabled = false;
+            this.disabled1 = false;
+        } 
+      
+        }
+        approvehandle(){
+            console.log(this.radiovalue)
+           if((this.radiovalue == 'None') || (this.radiovalue == null)){
+                console.log("Apbtn",this.Apbtn);
+                this.customclass ='greencolour';
+                this.disabled = true;
+                const passEvent = new CustomEvent('selectedrec',{ composed: true,
+                bubbles: true,
+                cancelable: true,
+                 detail: {
+                    value: { rowId: this.rowId, state: this.Apbtn }
+                 },
+      
+                });
+             
+                this.dispatchEvent(passEvent); 
+             
+            
+           
+            }
+         }
+         rejecthandle(){
+             if((this.radiovalue == 'None') || (this.radiovalue == null)){
+                console.log("recbtn",this.recbtn);
+                this.customclass1 = 'redcolour';
+                const passEvent = new CustomEvent('selectedrec',{ composed: true,
+                bubbles: true,
+                cancelable: true,
+                 detail: {
+                value: { rowId: this.rowId, state: this.recbtn }
+                 },
+      
+            });
+            
+            this.dispatchEvent(passEvent); 
+         }
+  
+         }
+}
+----------------------------------CSS-----------------------------------------------
+.greencolour {
+   --sds-c-icon-color-foreground-default:green;
+   opacity: 0.65; 
+  cursor: not-allowed;
+   
+}
+.align {
+  margin-left: 4px;
+}
+.redcolour {
+    --sds-c-icon-color-foreground-default:red;
+     opacity: 0.65; 
+  cursor: not-allowed;
+}
+.cursor{
+     opacity: 0.65; 
+  cursor: not-allowed;
+}
+
+
+
+
